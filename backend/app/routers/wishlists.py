@@ -1,6 +1,9 @@
+import time
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from slugify import slugify
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -24,7 +27,8 @@ def _make_slug(title: str, user_id: int) -> str:
 
 
 def _serialize_item(item: WishlistItem, is_owner: bool) -> dict:
-    total = sum(float(c.amount) for c in item.contributions)
+    from decimal import Decimal
+    total = float(sum(Decimal(str(c.amount)) for c in item.contributions))
     data = {
         "id": item.id,
         "title": item.title,
@@ -37,6 +41,7 @@ def _serialize_item(item: WishlistItem, is_owner: bool) -> dict:
         "total_contributed": total,
     }
     if is_owner:
+        # Owner does not see who reserved / contributed (privacy for guests)
         data["reservation"] = None
         data["contributions"] = []
     else:
@@ -93,22 +98,25 @@ async def create_wishlist(
     db: AsyncSession = Depends(get_db),
 ):
     slug = _make_slug(body.title, user.id)
-    # Ensure unique slug
-    existing = await db.execute(select(Wishlist).where(Wishlist.slug == slug))
-    if existing.scalar_one_or_none():
-        import time
-        slug = f"{slug}-{int(time.time()) % 10000}"
 
-    wl = Wishlist(
-        owner_id=user.id,
-        title=body.title,
-        description=body.description,
-        event_date=body.event_date,
-        slug=slug,
-    )
-    db.add(wl)
-    await db.flush()
-    return {"id": wl.id, "slug": wl.slug}
+    for attempt in range(3):
+        candidate = slug if attempt == 0 else f"{slug}-{int(time.time()) % 100000}"
+        wl = Wishlist(
+            owner_id=user.id,
+            title=body.title,
+            description=body.description,
+            event_date=body.event_date,
+            slug=candidate,
+        )
+        db.add(wl)
+        try:
+            await db.flush()
+            return {"id": wl.id, "slug": wl.slug}
+        except IntegrityError:
+            await db.rollback()
+            # Try next candidate on slug collision
+
+    raise HTTPException(status_code=409, detail="Could not generate a unique slug, try a different title")
 
 
 @router.get("/{slug}")
@@ -132,6 +140,10 @@ async def get_wishlist(
 
     is_owner = user is not None and user.id == wl.owner_id
 
+    # Private wishlists are only visible to their owner
+    if not wl.is_public and not is_owner:
+        raise HTTPException(status_code=404, detail="Wishlist not found")
+
     return {
         "id": wl.id,
         "title": wl.title,
@@ -141,7 +153,8 @@ async def get_wishlist(
         "is_public": wl.is_public,
         "created_at": wl.created_at.isoformat(),
         "is_owner": is_owner,
-        "owner": {"id": wl.owner.id, "name": wl.owner.name, "email": wl.owner.email},
+        # Only expose name, not email — email is PII
+        "owner": {"id": wl.owner.id, "name": wl.owner.name},
         "items": [_serialize_item(item, is_owner) for item in wl.items],
     }
 

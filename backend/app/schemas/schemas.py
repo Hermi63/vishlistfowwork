@@ -1,18 +1,18 @@
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 # ── Auth ──────────────────────────────────────────────────────────────
 class RegisterRequest(BaseModel):
     email: EmailStr
-    name: str
-    password: str
+    name: str = Field(min_length=1, max_length=255)
+    password: str = Field(min_length=8, max_length=128)
 
 
 class LoginRequest(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(min_length=1, max_length=128)
 
 
 class TokenResponse(BaseModel):
@@ -31,14 +31,14 @@ class UserOut(BaseModel):
 
 # ── Wishlist ──────────────────────────────────────────────────────────
 class WishlistCreate(BaseModel):
-    title: str
-    description: str | None = None
+    title: str = Field(min_length=1, max_length=255)
+    description: str | None = Field(default=None, max_length=2000)
     event_date: datetime | None = None
 
 
 class WishlistUpdate(BaseModel):
-    title: str | None = None
-    description: str | None = None
+    title: str | None = Field(default=None, min_length=1, max_length=255)
+    description: str | None = Field(default=None, max_length=2000)
     event_date: datetime | None = None
     is_public: bool | None = None
 
@@ -72,19 +72,19 @@ class WishlistListOut(BaseModel):
 
 # ── Item ──────────────────────────────────────────────────────────────
 class ItemCreate(BaseModel):
-    title: str
-    description: str | None = None
-    url: str | None = None
-    image_url: str | None = None
-    price: float | None = None
+    title: str = Field(min_length=1, max_length=500)
+    description: str | None = Field(default=None, max_length=2000)
+    url: str | None = Field(default=None, max_length=2048)
+    image_url: str | None = Field(default=None, max_length=2048)
+    price: float | None = Field(default=None, gt=0, le=1_000_000_000)
 
 
 class ItemUpdate(BaseModel):
-    title: str | None = None
-    description: str | None = None
-    url: str | None = None
-    image_url: str | None = None
-    price: float | None = None
+    title: str | None = Field(default=None, min_length=1, max_length=500)
+    description: str | None = Field(default=None, max_length=2000)
+    url: str | None = Field(default=None, max_length=2048)
+    image_url: str | None = Field(default=None, max_length=2048)
+    price: float | None = Field(default=None, gt=0, le=1_000_000_000)
 
 
 class ItemOut(BaseModel):
@@ -106,7 +106,7 @@ class ItemOut(BaseModel):
 
 # ── Reservation ───────────────────────────────────────────────────────
 class ReserveRequest(BaseModel):
-    name: str
+    name: str = Field(min_length=1, max_length=255)
 
 
 class ReservationOut(BaseModel):
@@ -119,8 +119,8 @@ class ReservationOut(BaseModel):
 
 # ── Contribution ─────────────────────────────────────────────────────
 class ContributeRequest(BaseModel):
-    name: str
-    amount: float
+    name: str = Field(min_length=1, max_length=255)
+    amount: float = Field(gt=0, le=1_000_000_000)
 
 
 class ContributionOut(BaseModel):
@@ -134,7 +134,7 @@ class ContributionOut(BaseModel):
 
 # ── Link Preview ─────────────────────────────────────────────────────
 class LinkPreviewRequest(BaseModel):
-    url: str
+    url: str = Field(min_length=1, max_length=2048)
 
 
 class LinkPreviewResponse(BaseModel):
