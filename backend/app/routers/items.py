@@ -1,3 +1,5 @@
+from decimal import Decimal, InvalidOperation
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -152,9 +154,13 @@ async def unreserve_item(
     if not item.reservation:
         raise HTTPException(status_code=404, detail="Not reserved")
 
-    # Only the person who reserved can unreserve
-    if user and item.reservation.reserved_by_user_id and item.reservation.reserved_by_user_id != user.id:
-        raise HTTPException(status_code=403, detail="Not your reservation")
+    reserved_by = item.reservation.reserved_by_user_id
+
+    if reserved_by is not None:
+        # Reservation was made by an authenticated user — only that user can cancel
+        if user is None or user.id != reserved_by:
+            raise HTTPException(status_code=403, detail="Not your reservation")
+    # else: reservation was made anonymously — anyone can cancel (best-effort)
 
     await db.delete(item.reservation)
     item.status = GiftStatus.AVAILABLE
@@ -187,31 +193,33 @@ async def contribute(
     if item.status == GiftStatus.FUNDED:
         raise HTTPException(status_code=409, detail="Item is already fully funded")
 
-    if body.amount <= 0:
-        raise HTTPException(status_code=400, detail="Amount must be positive")
+    # Amount validated in schema (> 0, reasonable upper bound)
+    amount = Decimal(str(body.amount))
 
     contribution = Contribution(
         item_id=item.id,
         contributor_name=body.name,
         contributor_user_id=user.id if user else None,
-        amount=body.amount,
+        amount=amount,
     )
     db.add(contribution)
 
     if item.status == GiftStatus.AVAILABLE:
         item.status = GiftStatus.CROWDFUNDING
 
-    # Check if fully funded
-    total = sum(float(c.amount) for c in item.contributions) + body.amount
-    if item.price and total >= float(item.price):
+    # Check if fully funded using Decimal to avoid float rounding errors
+    existing_total = sum(Decimal(str(c.amount)) for c in item.contributions)
+    total = existing_total + amount
+    if item.price and total >= Decimal(str(item.price)):
         item.status = GiftStatus.FUNDED
 
     await db.flush()
 
+    total_float = float(total)
     await manager.broadcast(
-        slug, "contribution_added", {"item_id": item.id, "total": total}
+        slug, "contribution_added", {"item_id": item.id, "total": total_float}
     )
-    return {"ok": True, "total": total}
+    return {"ok": True, "total": total_float}
 
 
 @router.delete("/{item_id}/contribute/{contribution_id}")
@@ -228,29 +236,42 @@ async def remove_contribution(
         raise HTTPException(status_code=404, detail="Item not in this wishlist")
 
     result = await db.execute(
-        select(Contribution).where(Contribution.id == contribution_id, Contribution.item_id == item_id)
+        select(Contribution).where(
+            Contribution.id == contribution_id,
+            Contribution.item_id == item_id,
+        )
     )
     contrib = result.scalar_one_or_none()
     if not contrib:
         raise HTTPException(status_code=404, detail="Contribution not found")
 
-    if user and contrib.contributor_user_id and contrib.contributor_user_id != user.id:
-        raise HTTPException(status_code=403, detail="Not your contribution")
+    contrib_by = contrib.contributor_user_id
+
+    if contrib_by is not None:
+        # Contribution was made by an authenticated user — only that user can remove it
+        if user is None or user.id != contrib_by:
+            raise HTTPException(status_code=403, detail="Not your contribution")
+    # else: anonymous contribution — anyone can remove (best-effort)
 
     await db.delete(contrib)
 
-    # Recalculate status
-    remaining = sum(float(c.amount) for c in item.contributions if c.id != contribution_id)
+    # Recalculate status using Decimal
+    remaining = sum(
+        Decimal(str(c.amount))
+        for c in item.contributions
+        if c.id != contribution_id
+    )
     if remaining <= 0:
         item.status = GiftStatus.AVAILABLE
-    elif item.price and remaining >= float(item.price):
+    elif item.price and remaining >= Decimal(str(item.price)):
         item.status = GiftStatus.FUNDED
     else:
         item.status = GiftStatus.CROWDFUNDING
 
     await db.flush()
 
+    remaining_float = float(remaining)
     await manager.broadcast(
-        slug, "contribution_removed", {"item_id": item.id, "total": remaining}
+        slug, "contribution_removed", {"item_id": item.id, "total": remaining_float}
     )
-    return {"ok": True, "total": remaining}
+    return {"ok": True, "total": remaining_float}
