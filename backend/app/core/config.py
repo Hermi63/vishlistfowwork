@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
     CORS_ORIGINS: str = "http://localhost:3000"
+    GOOGLE_CLIENT_ID: str = ""
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 

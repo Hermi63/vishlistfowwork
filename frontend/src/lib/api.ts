@@ -39,6 +39,9 @@ export const api = {
 
   me: () => request("/api/auth/me"),
 
+  googleAuth: (idToken: string) =>
+    request("/api/auth/google", { method: "POST", body: JSON.stringify({ id_token: idToken }) }),
+
   // Wishlists
   getMyWishlists: () => request("/api/wishlists/my"),
 
