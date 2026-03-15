@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -9,6 +10,8 @@ from starlette.responses import Response
 from .core.config import settings
 from .core.database import Base, engine
 from .routers import auth, items, preview, wishlists, ws
+
+logger = logging.getLogger(__name__)
 
 
 class COOPMiddleware(BaseHTTPMiddleware):
@@ -24,6 +27,7 @@ class COOPMiddleware(BaseHTTPMiddleware):
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    logger.info("CORS allowed origins: %s", cors_origins)
     yield
 
 
@@ -36,7 +40,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
     expose_headers=["*"],
 )
@@ -50,4 +54,4 @@ app.include_router(ws.router)
 
 @app.get("/api/health")
 async def health():
-    return {"status": "ok"}
+    return {"status": "ok", "cors_origins": cors_origins}
