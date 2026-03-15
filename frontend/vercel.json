@@ -4,6 +4,12 @@
   "outputDirectory": ".next",
   "installCommand": "npm ci",
   "regions": ["fra1"],
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://vishlistfowwork-production.up.railway.app/api/:path*"
+    }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",
