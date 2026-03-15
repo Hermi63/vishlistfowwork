@@ -121,26 +121,87 @@ SQL-схема для справки: `backend/schema.sql`
 
 ## Деплой
 
-### Frontend — Vercel
+### Быстрый деплой (автоматический)
 
-1. Подключите GitHub-репозиторий к Vercel
-2. Root Directory: `frontend`
+```bash
+# Установите CLI-инструменты:
+npm i -g @railway/cli vercel
+
+# Запустите скрипт:
+./deploy.sh
+```
+
+Скрипт последовательно:
+1. Запросит DATABASE_URL от Supabase
+2. Задеплоит backend на Railway с правильными env vars
+3. Задеплоит frontend на Vercel с `NEXT_PUBLIC_API_URL`
+4. Настроит CORS автоматически
+5. Выведет все URL и переменные
+
+### Ручной деплой
+
+#### 1. База данных — Supabase (бесплатно)
+
+1. Зайдите на [supabase.com](https://supabase.com) → New Project
+2. Settings → Database → Connection string → URI
+3. Замените `postgresql://` на `postgresql+asyncpg://`
+4. Таблицы создадутся автоматически при первом запуске backend
+
+#### 2. Backend — Railway
+
+1. [railway.app](https://railway.app) → New Project → Deploy from GitHub repo
+2. Root Directory: `backend`
 3. Environment Variables:
-   - `NEXT_PUBLIC_API_URL` = URL бэкенда
 
-### Backend — Railway / Render
+| Переменная | Значение |
+|-----------|----------|
+| `DATABASE_URL` | `postgresql+asyncpg://...` (из Supabase) |
+| `SECRET_KEY` | `python -c "import secrets; print(secrets.token_hex(32))"` |
+| `CORS_ORIGINS` | `https://your-app.vercel.app` |
+| `APP_ENV` | `production` |
 
-1. Создайте сервис из `backend/` директории
-2. Environment Variables:
-   - `DATABASE_URL` = PostgreSQL connection string (формат: `postgresql+asyncpg://...`)
-   - `SECRET_KEY` = случайная строка (минимум 32 символа)
-   - `CORS_ORIGINS` = URL фронтенда (через запятую для нескольких)
+4. Railway автоматически подхватит `Dockerfile` и `railway.json`
+5. Сгенерируйте публичный домен: Settings → Networking → Generate Domain
 
-### Database — Supabase / Railway / Neon
+#### 3. Frontend — Vercel
 
-1. Создайте PostgreSQL инстанс
-2. Скопируйте connection string в `DATABASE_URL` бэкенда
-3. Таблицы создадутся автоматически
+1. [vercel.com](https://vercel.com) → Add New → Project → Import GitHub repo
+2. Root Directory: `frontend`
+3. Framework Preset: `Next.js`
+4. Environment Variables:
+
+| Переменная | Значение |
+|-----------|----------|
+| `NEXT_PUBLIC_API_URL` | `https://your-backend.up.railway.app` |
+
+5. Deploy!
+
+#### 4. Проверка
+
+```bash
+# Backend health check
+curl https://your-backend.up.railway.app/api/health
+
+# WebSocket (должен вернуть upgrade)
+wscat -c wss://your-backend.up.railway.app/ws/test-slug
+```
+
+### Переменные окружения (полный список)
+
+**Backend (Railway):**
+| Переменная | Обязательная | Описание |
+|-----------|:---:|----------|
+| `DATABASE_URL` | да | PostgreSQL строка подключения (`postgresql+asyncpg://...`) |
+| `SECRET_KEY` | да | Секрет для JWT (min 32 символа) |
+| `CORS_ORIGINS` | да | URL фронтенда (через запятую) |
+| `APP_ENV` | нет | `production` для строгих проверок |
+| `GOOGLE_CLIENT_ID` | нет | Для Google OAuth |
+
+**Frontend (Vercel):**
+| Переменная | Обязательная | Описание |
+|-----------|:---:|----------|
+| `NEXT_PUBLIC_API_URL` | да | URL бэкенда |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | нет | Для Google OAuth |
 
 ## Безопасность
 
