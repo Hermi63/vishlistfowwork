@@ -1,11 +1,12 @@
-const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-// Upgrade to HTTPS if page is served over HTTPS (avoid Mixed Content block)
+/**
+ * In production, API requests go through Next.js rewrites (same origin),
+ * so no CORS issues. The rewrite proxies /api/* to the backend.
+ * In development, requests go directly to the backend via NEXT_PUBLIC_API_URL.
+ */
 const API_URL =
-  typeof window !== "undefined" &&
-  window.location.protocol === "https:" &&
-  rawApiUrl.startsWith("http://")
-    ? rawApiUrl.replace("http://", "https://")
-    : rawApiUrl;
+  typeof window !== "undefined" && process.env.NODE_ENV === "production"
+    ? "" // Same origin — use Next.js rewrites (no CORS needed)
+    : process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -101,6 +102,13 @@ export const api = {
 };
 
 export function getWsUrl(slug: string): string {
-  const base = API_URL.replace(/^http/, "ws");
+  if (typeof window !== "undefined" && process.env.NODE_ENV === "production") {
+    // In production, connect WebSocket directly to backend
+    const backendWs = (process.env.NEXT_PUBLIC_API_URL || "")
+      .replace(/^http/, "ws");
+    return `${backendWs}/ws/${slug}`;
+  }
+  const base = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000")
+    .replace(/^http/, "ws");
   return `${base}/ws/${slug}`;
 }

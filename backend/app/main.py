@@ -1,3 +1,4 @@
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -36,13 +37,13 @@ app.include_router(ws.router)
 
 @app.get("/api/health")
 async def health():
-    return {"status": "ok"}
+    return {"status": "ok", "cors_origins": cors_origins}
 
 
 @app.get("/api/debug-cors")
 async def debug_cors():
-    import os
     return {
         "CORS_ORIGINS_env": os.getenv("CORS_ORIGINS"),
         "CORS_ORIGINS_settings": settings.CORS_ORIGINS,
+        "cors_origins_parsed": cors_origins,
     }

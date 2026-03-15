@@ -12,8 +12,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Railway injects PORT env var; default to 8000
-ENV PORT=8000
-EXPOSE ${PORT}
-
+# Railway injects PORT env var at runtime
 CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
