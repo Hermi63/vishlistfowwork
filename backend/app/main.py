@@ -2,10 +2,22 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import Response
 
 from .core.config import settings
 from .core.database import Base, engine
 from .routers import auth, items, preview, wishlists, ws
+
+
+class COOPMiddleware(BaseHTTPMiddleware):
+    """Set Cross-Origin-Opener-Policy to allow Google Sign-In popups."""
+
+    async def dispatch(self, request: Request, call_next):
+        response: Response = await call_next(request)
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
+        return response
 
 
 @asynccontextmanager
@@ -19,12 +31,14 @@ app = FastAPI(title=settings.APP_NAME, lifespan=lifespan)
 
 cors_origins = [o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()]
 
+app.add_middleware(COOPMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 app.include_router(auth.router)

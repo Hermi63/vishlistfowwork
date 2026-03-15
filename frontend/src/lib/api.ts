@@ -18,6 +18,7 @@ async function request(path: string, options: RequestInit = {}) {
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
     headers,
+    mode: "cors",
   });
 
   if (!res.ok) {
