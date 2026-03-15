@@ -1,6 +1,7 @@
 from datetime import datetime
+from typing import Annotated
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 # ── Auth ──────────────────────────────────────────────────────────────
@@ -70,6 +71,16 @@ class WishlistListOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+def _validate_safe_url(v: str | None) -> str | None:
+    """Allow only http/https URLs to prevent javascript: and data: injection."""
+    if v is None:
+        return v
+    lower = v.lower().lstrip()
+    if not (lower.startswith("http://") or lower.startswith("https://")):
+        raise ValueError("URL must start with http:// or https://")
+    return v
+
+
 # ── Item ──────────────────────────────────────────────────────────────
 class ItemCreate(BaseModel):
     title: str = Field(min_length=1, max_length=500)
@@ -78,6 +89,8 @@ class ItemCreate(BaseModel):
     image_url: str | None = Field(default=None, max_length=2048)
     price: float | None = Field(default=None, gt=0, le=1_000_000_000)
 
+    _validate_url = field_validator("url", "image_url", mode="before")(_validate_safe_url)
+
 
 class ItemUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=500)
@@ -85,6 +98,8 @@ class ItemUpdate(BaseModel):
     url: str | None = Field(default=None, max_length=2048)
     image_url: str | None = Field(default=None, max_length=2048)
     price: float | None = Field(default=None, gt=0, le=1_000_000_000)
+
+    _validate_url = field_validator("url", "image_url", mode="before")(_validate_safe_url)
 
 
 class ItemOut(BaseModel):
