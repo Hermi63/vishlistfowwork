@@ -1,11 +1,10 @@
 /**
- * In production, API requests go through Next.js rewrites (same origin),
- * so no CORS issues. The rewrite proxies /api/* to the backend.
- * In development, requests go directly to the backend via NEXT_PUBLIC_API_URL.
+ * Client-side: always use relative URL so requests go through Vercel/Next.js rewrites.
+ * Server-side (SSR): use the full backend URL directly.
  */
 const API_URL =
-  typeof window !== "undefined" && process.env.NODE_ENV === "production"
-    ? "" // Same origin — use Next.js rewrites (no CORS needed)
+  typeof window !== "undefined"
+    ? "" // Browser: same-origin, rewrites proxy to backend
     : process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 function getToken(): string | null {
