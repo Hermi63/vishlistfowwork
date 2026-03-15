@@ -126,6 +126,7 @@ export function GiftCard({ item, slug, isOwner, onUpdate }: GiftCardProps) {
     <Card className="overflow-hidden flex flex-col">
       {item.image_url && (
         <div className="relative h-48 bg-neutral-100 dark:bg-neutral-800">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={item.image_url}
             alt={item.title}
