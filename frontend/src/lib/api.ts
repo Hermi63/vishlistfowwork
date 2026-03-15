@@ -30,7 +30,14 @@ async function request(path: string, options: RequestInit = {}) {
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.detail || `Request failed: ${res.status}`);
+    const detail = body.detail;
+    const message =
+      Array.isArray(detail)
+        ? detail.map((e: { msg?: string }) => e.msg || JSON.stringify(e)).join(", ")
+        : typeof detail === "string"
+        ? detail
+        : `Request failed: ${res.status}`;
+    throw new Error(message);
   }
 
   if (res.status === 204) return null;
