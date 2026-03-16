@@ -108,13 +108,9 @@ export const api = {
 };
 
 export function getWsUrl(slug: string): string {
-  if (typeof window !== "undefined" && process.env.NODE_ENV === "production") {
-    // In production, connect WebSocket directly to backend
-    const backendWs = (process.env.NEXT_PUBLIC_API_URL || "")
-      .replace(/^http/, "ws");
-    return `${backendWs}/ws/${slug}`;
-  }
-  const base = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000")
-    .replace(/^http/, "ws");
-  return `${base}/ws/${slug}`;
+  // WebSocket requires an absolute URL — Vercel rewrites don't support WS upgrades.
+  // Always connect directly to the backend via NEXT_PUBLIC_API_URL.
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const wsBase = apiUrl.replace(/^https/, "wss").replace(/^http(?!s)/, "ws");
+  return `${wsBase}/ws/${slug}`;
 }

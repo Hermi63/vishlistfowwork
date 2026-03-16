@@ -10,7 +10,6 @@ from sqlalchemy import (
     Numeric,
     String,
     Text,
-    UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -100,9 +99,6 @@ class Reservation(Base):
 
 class Contribution(Base):
     __tablename__ = "contributions"
-    __table_args__ = (
-        UniqueConstraint("item_id", "contributor_name", "id", name="uq_contribution"),
-    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     item_id: Mapped[int] = mapped_column(
