@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
 import { GoogleButton } from "@/components/google-button";
+import { Gift } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -51,21 +52,27 @@ export default function LoginPage() {
   );
 
   return (
-    <div className="flex min-h-[60vh] items-center justify-center">
-      <Card className="w-full max-w-md p-8">
-        <h1 className="mb-6 text-2xl font-bold text-center">Вход</h1>
+    <div className="flex min-h-[80vh] items-center justify-center px-4">
+      <Card className="animate-scale-in w-full max-w-md p-8 sm:p-10 shadow-large">
+        <div className="mb-8 flex flex-col items-center">
+          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-purple-500 shadow-glow">
+            <Gift className="h-7 w-7 text-white" />
+          </div>
+          <h1 className="text-2xl font-extrabold tracking-tight">Добро пожаловать</h1>
+          <p className="mt-1 text-sm text-muted">Войдите в свой аккаунт</p>
+        </div>
 
         <GoogleButton onSuccess={handleGoogleSuccess} onError={setError} />
 
-        <div className="my-4 flex items-center gap-3 text-sm text-neutral-400">
-          <span className="flex-1 border-t" />
+        <div className="my-6 flex items-center gap-3 text-sm text-muted">
+          <span className="flex-1 border-t border-[var(--border)]" />
           или
-          <span className="flex-1 border-t" />
+          <span className="flex-1 border-t border-[var(--border)]" />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium">Email</label>
+            <label className="mb-1.5 block text-sm font-semibold">Email</label>
             <Input
               type="email"
               value={email}
@@ -75,7 +82,7 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">Пароль</label>
+            <label className="mb-1.5 block text-sm font-semibold">Пароль</label>
             <Input
               type="password"
               value={password}
@@ -84,14 +91,18 @@ export default function LoginPage() {
               required
             />
           </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          <Button type="submit" className="w-full" disabled={loading}>
+          {error && (
+            <div className="rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-600 dark:text-red-400 animate-slide-down">
+              {error}
+            </div>
+          )}
+          <Button type="submit" variant="gradient" className="w-full" disabled={loading}>
             {loading ? "Вход..." : "Войти"}
           </Button>
         </form>
-        <p className="mt-4 text-center text-sm text-neutral-500">
+        <p className="mt-6 text-center text-sm text-muted">
           Нет аккаунта?{" "}
-          <Link href="/register" className="text-blue-600 hover:underline">
+          <Link href="/register" className="font-semibold text-accent hover:text-accent-dark transition-colors">
             Зарегистрироваться
           </Link>
         </p>

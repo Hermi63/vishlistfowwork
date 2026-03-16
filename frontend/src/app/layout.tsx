@@ -14,7 +14,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru">
-      <body className="font-sans antialiased">
+      <body className="font-sans antialiased bg-grid min-h-screen">
         <Providers>{children}</Providers>
       </body>
     </html>

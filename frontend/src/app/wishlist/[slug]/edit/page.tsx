@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
-import { Loader2 } from "lucide-react";
+import { Loader2, Pencil } from "lucide-react";
 
 export default function EditWishlistPage() {
   const params = useParams();
@@ -59,18 +59,24 @@ export default function EditWishlistPage() {
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
+        <Loader2 className="h-8 w-8 animate-spin text-accent" />
       </div>
     );
   }
 
   return (
-    <div className="flex justify-center">
-      <Card className="w-full max-w-lg p-8">
-        <h1 className="mb-6 text-2xl font-bold">Редактировать вишлист</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="flex justify-center px-4">
+      <Card className="animate-scale-in w-full max-w-lg p-8 sm:p-10 shadow-large">
+        <div className="mb-8 flex flex-col items-center">
+          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 shadow-medium">
+            <Pencil className="h-7 w-7 text-white" />
+          </div>
+          <h1 className="text-2xl font-extrabold tracking-tight">Редактировать</h1>
+          <p className="mt-1 text-sm text-muted">Измените данные вишлиста</p>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="mb-1 block text-sm font-medium">Название</label>
+            <label className="mb-1.5 block text-sm font-semibold">Название</label>
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -78,24 +84,28 @@ export default function EditWishlistPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">Описание</label>
+            <label className="mb-1.5 block text-sm font-semibold">Описание</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="flex min-h-[80px] w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+              className="flex min-h-[100px] w-full rounded-xl border-2 border-[var(--border)] bg-surface px-4 py-3 text-sm transition-all duration-200 placeholder:text-muted focus:outline-none focus:border-accent focus:ring-4 focus:ring-accent/10 resize-none"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">Дата события</label>
+            <label className="mb-1.5 block text-sm font-semibold">Дата события</label>
             <Input
               type="date"
               value={eventDate}
               onChange={(e) => setEventDate(e.target.value)}
             />
           </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && (
+            <div className="rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-600 dark:text-red-400 animate-slide-down">
+              {error}
+            </div>
+          )}
           <div className="flex gap-3">
-            <Button type="submit" className="flex-1" disabled={saving}>
+            <Button type="submit" variant="gradient" className="flex-1" disabled={saving}>
               {saving ? "Сохранение..." : "Сохранить"}
             </Button>
             <Button

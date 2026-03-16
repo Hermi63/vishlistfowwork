@@ -10,12 +10,12 @@ import { useAuth } from "@/lib/auth-context";
 import { api, getWsUrl } from "@/lib/api";
 import {
   CalendarDays,
-  Gift,
   Plus,
   Share2,
   X,
   Loader2,
   Pencil,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -55,7 +55,6 @@ export default function WishlistPage() {
   const [error, setError] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
 
-  // Add gift form
   const [newTitle, setNewTitle] = useState("");
   const [newUrl, setNewUrl] = useState("");
   const [newPrice, setNewPrice] = useState("");
@@ -77,27 +76,17 @@ export default function WishlistPage() {
     }
   }, [slug]);
 
-  // Initial load
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  // WebSocket for realtime
   useEffect(() => {
     const ws = new WebSocket(getWsUrl(slug));
     wsRef.current = ws;
-
-    ws.onmessage = () => {
-      // On any event, refetch data
-      fetchData();
-    };
-
+    ws.onmessage = () => { fetchData(); };
     ws.onerror = () => {};
     ws.onclose = () => {};
-
-    return () => {
-      ws.close();
-    };
+    return () => { ws.close(); };
   }, [slug, fetchData]);
 
   async function handleUrlBlur() {
@@ -152,15 +141,18 @@ export default function WishlistPage() {
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
+        <Loader2 className="h-8 w-8 animate-spin text-accent" />
       </div>
     );
   }
 
   if (error || !data) {
     return (
-      <div className="flex flex-col items-center gap-4 py-20">
-        <p className="text-red-600">{error || "Вишлист не найден"}</p>
+      <div className="flex flex-col items-center gap-4 py-20 animate-fade-in">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50 dark:bg-red-900/20">
+          <X className="h-8 w-8 text-red-500" />
+        </div>
+        <p className="text-lg font-semibold">{error || "Вишлист не найден"}</p>
         <Link href="/">
           <Button variant="outline">На главную</Button>
         </Link>
@@ -169,24 +161,24 @@ export default function WishlistPage() {
   }
 
   return (
-    <div>
-      {/* Header */}
-      <div className="mb-8">
+    <div className="animate-fade-in-up">
+      {/* Шапка вишлиста */}
+      <div className="mb-10">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold">{data.title}</h1>
-            <p className="mt-1 text-neutral-500">
+            <h1 className="text-4xl font-extrabold tracking-tight">{data.title}</h1>
+            <p className="mt-2 text-muted font-medium">
               от {data.owner.name}
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={copyLink} className="gap-1">
-              <Share2 className="h-3.5 w-3.5" /> Поделиться
+            <Button variant="outline" size="sm" onClick={copyLink}>
+              <Share2 className="h-4 w-4" /> Поделиться
             </Button>
             {data.is_owner && (
               <Link href={`/wishlist/${slug}/edit`}>
-                <Button variant="outline" size="sm" className="gap-1">
-                  <Pencil className="h-3.5 w-3.5" /> Редактировать
+                <Button variant="outline" size="sm">
+                  <Pencil className="h-4 w-4" /> Редактировать
                 </Button>
               </Link>
             )}
@@ -194,39 +186,39 @@ export default function WishlistPage() {
         </div>
 
         {data.description && (
-          <p className="mt-3 text-neutral-600 dark:text-neutral-400">{data.description}</p>
+          <p className="mt-4 text-muted text-lg leading-relaxed max-w-2xl">{data.description}</p>
         )}
 
         {data.event_date && (
-          <p className="mt-2 flex items-center gap-1 text-sm text-neutral-400">
+          <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-accent/5 px-4 py-1.5 text-sm font-medium text-accent">
             <CalendarDays className="h-4 w-4" />
             {new Date(data.event_date).toLocaleDateString("ru-RU", {
               day: "numeric",
               month: "long",
               year: "numeric",
             })}
-          </p>
+          </div>
         )}
       </div>
 
-      {/* Add gift button (owner only) */}
+      {/* Форма добавления (только для владельца) */}
       {data.is_owner && (
-        <div className="mb-6">
+        <div className="mb-8">
           {!showAddForm ? (
-            <Button onClick={() => setShowAddForm(true)} className="gap-1">
+            <Button variant="gradient" onClick={() => setShowAddForm(true)}>
               <Plus className="h-4 w-4" /> Добавить подарок
             </Button>
           ) : (
-            <Card className="p-6">
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="font-semibold text-lg">Новый подарок</h3>
-                <Button variant="ghost" size="sm" onClick={() => setShowAddForm(false)}>
+            <Card className="animate-scale-in p-6 sm:p-8 shadow-medium">
+              <div className="mb-5 flex items-center justify-between">
+                <h3 className="font-bold text-lg">Новый подарок</h3>
+                <Button variant="ghost" size="sm" onClick={() => setShowAddForm(false)} className="text-muted">
                   <X className="h-4 w-4" />
                 </Button>
               </div>
-              <form onSubmit={handleAddItem} className="space-y-3">
+              <form onSubmit={handleAddItem} className="space-y-4">
                 <div>
-                  <label className="mb-1 block text-sm font-medium">
+                  <label className="mb-1.5 block text-sm font-semibold">
                     Ссылка на товар
                   </label>
                   <div className="relative">
@@ -237,15 +229,15 @@ export default function WishlistPage() {
                       placeholder="https://..."
                     />
                     {previewLoading && (
-                      <Loader2 className="absolute right-3 top-2.5 h-5 w-5 animate-spin text-neutral-400" />
+                      <Loader2 className="absolute right-3 top-3 h-5 w-5 animate-spin text-accent" />
                     )}
                   </div>
-                  <p className="mt-1 text-xs text-neutral-400">
+                  <p className="mt-1.5 text-xs text-muted">
                     Вставьте ссылку — данные заполнятся автоматически
                   </p>
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium">Название *</label>
+                  <label className="mb-1.5 block text-sm font-semibold">Название *</label>
                   <Input
                     value={newTitle}
                     onChange={(e) => setNewTitle(e.target.value)}
@@ -253,9 +245,9 @@ export default function WishlistPage() {
                     required
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="mb-1 block text-sm font-medium">Цена, ₽</label>
+                    <label className="mb-1.5 block text-sm font-semibold">Цена, ₽</label>
                     <Input
                       type="number"
                       value={newPrice}
@@ -264,7 +256,7 @@ export default function WishlistPage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-sm font-medium">Изображение</label>
+                    <label className="mb-1.5 block text-sm font-semibold">Изображение</label>
                     <Input
                       value={newImageUrl}
                       onChange={(e) => setNewImageUrl(e.target.value)}
@@ -273,15 +265,15 @@ export default function WishlistPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium">Описание</label>
+                  <label className="mb-1.5 block text-sm font-semibold">Описание</label>
                   <textarea
                     value={newDescription}
                     onChange={(e) => setNewDescription(e.target.value)}
                     placeholder="Почему хочется именно это..."
-                    className="flex min-h-[60px] w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+                    className="flex min-h-[80px] w-full rounded-xl border-2 border-[var(--border)] bg-surface px-4 py-3 text-sm transition-all duration-200 placeholder:text-muted focus:outline-none focus:border-accent focus:ring-4 focus:ring-accent/10 resize-none"
                   />
                 </div>
-                <Button type="submit" disabled={addLoading} className="w-full">
+                <Button type="submit" variant="gradient" disabled={addLoading} className="w-full">
                   {addLoading ? "Добавление..." : "Добавить"}
                 </Button>
               </form>
@@ -290,27 +282,30 @@ export default function WishlistPage() {
         </div>
       )}
 
-      {/* Items grid */}
+      {/* Сетка подарков */}
       {data.items.length === 0 ? (
-        <Card className="flex flex-col items-center gap-4 p-12 text-center">
-          <Gift className="h-16 w-16 text-neutral-300" />
-          <h2 className="text-xl font-semibold">Подарков пока нет</h2>
-          <p className="text-neutral-500">
+        <Card className="flex flex-col items-center gap-5 p-16 text-center shadow-large">
+          <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-accent/10 to-purple-500/10">
+            <Sparkles className="h-10 w-10 text-accent animate-float" />
+          </div>
+          <h2 className="text-2xl font-bold">Подарков пока нет</h2>
+          <p className="text-muted max-w-sm">
             {data.is_owner
               ? "Добавьте первый подарок в свой вишлист"
               : "Владелец ещё не добавил подарки"}
           </p>
         </Card>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {data.items.map((item) => (
-            <GiftCard
-              key={item.id}
-              item={item}
-              slug={slug}
-              isOwner={data.is_owner}
-              onUpdate={fetchData}
-            />
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {data.items.map((item, i) => (
+            <div key={item.id} className="animate-fade-in-up" style={{ animationDelay: `${i * 80}ms` }}>
+              <GiftCard
+                item={item}
+                slug={slug}
+                isOwner={data.is_owner}
+                onUpdate={fetchData}
+              />
+            </div>
           ))}
         </div>
       )}

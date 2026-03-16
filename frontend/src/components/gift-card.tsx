@@ -47,22 +47,22 @@ export function GiftCard({ item, slug, isOwner, onUpdate }: GiftCardProps) {
   const statusLabel: Record<string, { text: string; color: string; icon: React.ReactNode }> = {
     available: {
       text: "Доступен",
-      color: "bg-green-100 text-green-800",
+      color: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800",
       icon: <Gift className="h-3.5 w-3.5" />,
     },
     reserved: {
       text: "Зарезервирован",
-      color: "bg-amber-100 text-amber-800",
+      color: "bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 border border-amber-200 dark:border-amber-800",
       icon: <Lock className="h-3.5 w-3.5" />,
     },
     crowdfunding: {
       text: "Сбор средств",
-      color: "bg-blue-100 text-blue-800",
+      color: "bg-accent/5 text-accent border border-accent/20",
       icon: <Users className="h-3.5 w-3.5" />,
     },
     funded: {
       text: "Собрано!",
-      color: "bg-green-100 text-green-800",
+      color: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800",
       icon: <CheckCircle2 className="h-3.5 w-3.5" />,
     },
   };
@@ -124,82 +124,88 @@ export function GiftCard({ item, slug, isOwner, onUpdate }: GiftCardProps) {
 
   return (
     <Card className="overflow-hidden flex flex-col">
-      {item.image_url && (
-        <div className="relative h-48 bg-neutral-100 dark:bg-neutral-800">
+      {/* Изображение */}
+      {item.image_url ? (
+        <div className="relative h-52 bg-surface-hover overflow-hidden group">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={item.image_url}
             alt={item.title}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             onError={(e) => {
               (e.target as HTMLImageElement).style.display = "none";
             }}
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        </div>
+      ) : (
+        <div className="flex h-36 items-center justify-center bg-gradient-to-br from-accent/5 to-purple-500/5">
+          <Gift className="h-14 w-14 text-accent/20" />
         </div>
       )}
-      {!item.image_url && (
-        <div className="flex h-32 items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 dark:from-neutral-800 dark:to-neutral-900">
-          <Gift className="h-12 w-12 text-neutral-300" />
-        </div>
-      )}
-      <div className="flex flex-1 flex-col p-4">
-        <div className="mb-2 flex items-start justify-between gap-2">
-          <h3 className="font-semibold text-lg leading-tight">{item.title}</h3>
-          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ${st.color}`}>
+
+      <div className="flex flex-1 flex-col p-5">
+        {/* Заголовок и статус */}
+        <div className="mb-3 flex items-start justify-between gap-2">
+          <h3 className="font-bold text-lg leading-tight">{item.title}</h3>
+          <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap ${st.color}`}>
             {st.icon} {st.text}
           </span>
         </div>
 
         {item.description && (
-          <p className="mb-3 text-sm text-neutral-500 line-clamp-2">{item.description}</p>
+          <p className="mb-3 text-sm text-muted line-clamp-2 leading-relaxed">{item.description}</p>
         )}
 
+        {/* Цена */}
         {item.price !== null && (
-          <p className="mb-2 text-xl font-bold text-neutral-900 dark:text-white">
-            {item.price.toLocaleString("ru-RU")} ₽
+          <p className="mb-3 text-2xl font-extrabold tracking-tight">
+            {item.price.toLocaleString("ru-RU")} <span className="text-lg text-muted">₽</span>
           </p>
         )}
 
+        {/* Прогресс сбора */}
         {(item.status === "crowdfunding" || item.status === "funded") && item.price && (
-          <div className="mb-3">
-            <div className="mb-1 flex justify-between text-xs text-neutral-500">
+          <div className="mb-4">
+            <div className="mb-2 flex justify-between text-xs font-medium text-muted">
               <span>Собрано: {item.total_contributed.toLocaleString("ru-RU")} ₽</span>
-              <span>{Math.round((item.total_contributed / item.price) * 100)}%</span>
+              <span className="text-accent font-bold">{Math.round((item.total_contributed / item.price) * 100)}%</span>
             </div>
             <Progress value={item.total_contributed} max={item.price} />
           </div>
         )}
 
-        {/* Contributions list (visible to non-owners) */}
+        {/* Список вкладов */}
         {!isOwner && item.contributions.length > 0 && (
-          <div className="mb-3 rounded-lg bg-neutral-50 p-2 dark:bg-neutral-900">
-            <p className="mb-1 text-xs font-medium text-neutral-500">Вклады:</p>
+          <div className="mb-4 rounded-xl bg-surface-hover p-3">
+            <p className="mb-2 text-xs font-semibold text-muted uppercase tracking-wide">Вклады</p>
             {item.contributions.map((c) => (
-              <div key={c.id} className="flex justify-between text-sm">
-                <span>{c.contributor_name}</span>
-                <span className="font-medium">{c.amount.toLocaleString("ru-RU")} ₽</span>
+              <div key={c.id} className="flex justify-between text-sm py-1">
+                <span className="font-medium">{c.contributor_name}</span>
+                <span className="font-bold text-accent">{c.amount.toLocaleString("ru-RU")} ₽</span>
               </div>
             ))}
           </div>
         )}
 
-        <div className="mt-auto flex flex-col gap-2 pt-2">
+        <div className="mt-auto flex flex-col gap-2 pt-3">
+          {/* Ссылка на товар */}
           {item.url && (
             <a
               href={item.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:text-accent-dark transition-colors"
             >
-              <ExternalLink className="h-3.5 w-3.5" /> Ссылка на товар
+              <ExternalLink className="h-3.5 w-3.5" /> Перейти к товару
             </a>
           )}
 
-          {/* Non-owner actions */}
+          {/* Действия гостя */}
           {!isOwner && item.status === "available" && (
-            <div className="flex gap-2">
-              <Button size="sm" className="flex-1" onClick={() => setShowReserve(!showReserve)}>
-                <Lock className="mr-1 h-3.5 w-3.5" /> Зарезервировать
+            <div className="flex gap-2 mt-1">
+              <Button size="sm" variant="gradient" className="flex-1" onClick={() => setShowReserve(!showReserve)}>
+                <Lock className="h-3.5 w-3.5" /> Зарезервировать
               </Button>
               <Button
                 size="sm"
@@ -207,7 +213,7 @@ export function GiftCard({ item, slug, isOwner, onUpdate }: GiftCardProps) {
                 className="flex-1"
                 onClick={() => setShowContribute(!showContribute)}
               >
-                <DollarSign className="mr-1 h-3.5 w-3.5" /> Скинуться
+                <DollarSign className="h-3.5 w-3.5" /> Скинуться
               </Button>
             </div>
           )}
@@ -217,39 +223,40 @@ export function GiftCard({ item, slug, isOwner, onUpdate }: GiftCardProps) {
               size="sm"
               variant="outline"
               onClick={() => setShowContribute(!showContribute)}
+              className="mt-1"
             >
-              <DollarSign className="mr-1 h-3.5 w-3.5" /> Добавить вклад
+              <DollarSign className="h-3.5 w-3.5" /> Добавить вклад
             </Button>
           )}
 
           {!isOwner && item.status === "reserved" && item.reservation && (
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-neutral-500">
-                Зарезервировал: {item.reservation.reserved_by_name}
+            <div className="flex items-center justify-between mt-1 rounded-xl bg-amber-50 dark:bg-amber-900/10 px-3 py-2">
+              <span className="text-sm text-muted">
+                Зарезервировал: <strong>{item.reservation.reserved_by_name}</strong>
               </span>
-              <Button size="sm" variant="ghost" onClick={handleUnreserve} disabled={loading}>
+              <Button size="sm" variant="ghost" onClick={handleUnreserve} disabled={loading} className="text-muted hover:text-foreground">
                 <Unlock className="h-3.5 w-3.5" />
               </Button>
             </div>
           )}
 
-          {/* Reserve form */}
+          {/* Форма резервирования */}
           {showReserve && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 animate-slide-down">
               <Input
                 placeholder="Ваше имя"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
-              <Button size="sm" onClick={handleReserve} disabled={loading}>
+              <Button size="sm" variant="gradient" onClick={handleReserve} disabled={loading}>
                 OK
               </Button>
             </div>
           )}
 
-          {/* Contribute form */}
+          {/* Форма вклада */}
           {showContribute && (
-            <div className="space-y-2">
+            <div className="space-y-2 animate-slide-down">
               <Input
                 placeholder="Ваше имя"
                 value={name}
@@ -262,17 +269,17 @@ export function GiftCard({ item, slug, isOwner, onUpdate }: GiftCardProps) {
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                 />
-                <Button size="sm" onClick={handleContribute} disabled={loading}>
+                <Button size="sm" variant="gradient" onClick={handleContribute} disabled={loading}>
                   Внести
                 </Button>
               </div>
             </div>
           )}
 
-          {/* Owner actions */}
+          {/* Удаление (для владельца) */}
           {isOwner && (
-            <Button size="sm" variant="destructive" onClick={handleDeleteItem}>
-              <Trash2 className="mr-1 h-3.5 w-3.5" /> Удалить
+            <Button size="sm" variant="destructive" onClick={handleDeleteItem} className="mt-1">
+              <Trash2 className="h-3.5 w-3.5" /> Удалить
             </Button>
           )}
         </div>

@@ -9,32 +9,39 @@ export function Navbar() {
   const { user, logout } = useAuth();
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-neutral-200 bg-white/80 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-950/80">
-      <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
-        <Link href={user ? "/dashboard" : "/"} className="flex items-center gap-2 font-bold text-lg">
-          <Gift className="h-6 w-6 text-blue-600" />
-          <span>WishList</span>
+    <nav className="sticky top-0 z-50 glass animate-slide-down">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
+        <Link
+          href={user ? "/dashboard" : "/"}
+          className="flex items-center gap-2.5 font-bold text-lg group"
+        >
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-accent to-purple-500 shadow-soft transition-transform duration-200 group-hover:scale-110">
+            <Gift className="h-5 w-5 text-white" />
+          </div>
+          <span className="tracking-tight">WishList</span>
         </Link>
         <div className="flex items-center gap-3">
           {user ? (
             <>
               <Link href="/create-wishlist">
-                <Button size="sm" className="gap-1">
+                <Button size="sm" variant="gradient">
                   <Plus className="h-4 w-4" /> Новый список
                 </Button>
               </Link>
-              <span className="text-sm text-neutral-500 hidden sm:inline">{user.name}</span>
-              <Button variant="ghost" size="sm" onClick={logout}>
+              <span className="text-sm text-muted hidden sm:inline font-medium">
+                {user.name}
+              </span>
+              <Button variant="ghost" size="sm" onClick={logout} className="text-muted hover:text-foreground">
                 <LogOut className="h-4 w-4" />
               </Button>
             </>
           ) : (
             <>
               <Link href="/login">
-                <Button variant="outline" size="sm">Войти</Button>
+                <Button variant="ghost" size="sm">Войти</Button>
               </Link>
               <Link href="/register">
-                <Button size="sm">Регистрация</Button>
+                <Button size="sm" variant="gradient">Регистрация</Button>
               </Link>
             </>
           )}

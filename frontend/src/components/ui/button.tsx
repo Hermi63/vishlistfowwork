@@ -2,7 +2,7 @@ import { ButtonHTMLAttributes, forwardRef } from "react";
 import { cn } from "@/lib/utils";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "default" | "outline" | "ghost" | "destructive";
+  variant?: "default" | "outline" | "ghost" | "destructive" | "gradient";
   size?: "sm" | "md" | "lg";
 }
 
@@ -12,19 +12,20 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={cn(
-          "inline-flex items-center justify-center rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+          "inline-flex items-center justify-center rounded-xl font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
           {
-            "bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900":
+            "bg-foreground text-background hover:opacity-90 shadow-soft hover:shadow-medium":
               variant === "default",
-            "border border-neutral-300 bg-white hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900":
+            "border-2 border-[var(--border)] bg-surface hover:bg-surface-hover hover:border-accent/30":
               variant === "outline",
-            "hover:bg-neutral-100 dark:hover:bg-neutral-800": variant === "ghost",
-            "bg-red-600 text-white hover:bg-red-700": variant === "destructive",
+            "hover:bg-surface-hover": variant === "ghost",
+            "bg-red-500 text-white hover:bg-red-600 shadow-soft": variant === "destructive",
+            "btn-gradient text-white shadow-soft": variant === "gradient",
           },
           {
-            "h-8 px-3 text-sm": size === "sm",
-            "h-10 px-4 text-sm": size === "md",
-            "h-12 px-6 text-base": size === "lg",
+            "h-9 px-4 text-sm gap-1.5": size === "sm",
+            "h-11 px-5 text-sm gap-2": size === "md",
+            "h-13 px-8 text-base gap-2": size === "lg",
           },
           className
         )}
