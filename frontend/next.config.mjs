@@ -23,8 +23,11 @@ const nextConfig = {
     ];
   },
   async rewrites() {
-    const backendUrl =
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    const raw = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    // Force HTTPS for non-localhost destinations to prevent Mixed Content errors
+    const backendUrl = /localhost|127\.0\.0\.1/.test(raw)
+      ? raw
+      : raw.replace(/^http:\/\//, "https://");
     return [
       {
         source: "/api/:path*",
