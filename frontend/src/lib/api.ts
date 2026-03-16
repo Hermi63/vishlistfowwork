@@ -1,11 +1,13 @@
 /**
- * Client-side: always use relative URL so requests go through Vercel/Next.js rewrites.
- * Server-side (SSR): use the full backend URL directly.
+ * Используем NEXT_PUBLIC_API_URL напрямую — принудительно HTTPS для продакшна.
+ * Это устраняет ошибку Mixed Content, когда Vercel rewrite делал redirect на http://.
  */
-const API_URL =
-  typeof window !== "undefined"
-    ? "" // Browser: same-origin, rewrites proxy to backend
-    : process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const _rawApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+// Принудительно HTTPS для всех не-localhost URL
+const API_URL = /localhost|127\.0\.0\.1/.test(_rawApiUrl)
+  ? _rawApiUrl
+  : _rawApiUrl.replace(/^http:\/\//, "https://");
 
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -108,13 +110,10 @@ export const api = {
 };
 
 export function getWsUrl(slug: string): string {
-  // WebSocket requires an absolute URL — Vercel rewrites don't support WS upgrades.
-  // Always connect directly to the backend via NEXT_PUBLIC_API_URL.
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-  // Force HTTPS (→ WSS) for non-localhost to prevent Mixed Content on HTTPS pages.
-  const safeUrl = /localhost|127\.0\.0\.1/.test(apiUrl)
-    ? apiUrl
-    : apiUrl.replace(/^http:\/\//, "https://");
+  // WebSocket напрямую к бэкенду, принудительно WSS для не-localhost
+  const safeUrl = /localhost|127\.0\.0\.1/.test(_rawApiUrl)
+    ? _rawApiUrl
+    : _rawApiUrl.replace(/^http:\/\//, "https://");
   const wsBase = safeUrl.replace(/^https/, "wss").replace(/^http(?!s)/, "ws");
   return `${wsBase}/ws/${slug}`;
 }
