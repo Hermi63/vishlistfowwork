@@ -8,14 +8,15 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --dark:    #2C3040;
-    --dark2:   #353A4A;
+    --dark:    #3D3D3D;
+    --dark2:   #4A4A4A;
     --accent:  #CC0000;
     --accent2: #E50000;
+    --silver:  #A8A8A8;
     --white:   #FFFFFF;
-    --gray:    #F5F7FA;
-    --text:    #4A4A52;
-    --border:  #DDE3EA;
+    --gray:    #F5F5F5;
+    --text:    #555555;
+    --border:  #E0E0E0;
   }
 
   html { scroll-behavior: smooth; }
@@ -33,7 +34,7 @@
     position: fixed;
     top: 0; left: 0; right: 0;
     z-index: 100;
-    background: rgba(44,48,64,0.97);
+    background: rgba(61,61,61,0.97);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid rgba(255,255,255,0.08);
   }
@@ -58,23 +59,31 @@
   }
 
   .logo-icon {
-    width: 42px; height: 42px;
-    background: var(--accent);
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
+    display: flex;
+    align-items: center;
+    gap: 2px;
     font-weight: 900;
-    font-size: 18px;
-    color: white;
-    letter-spacing: -1px;
+    font-size: 24px;
+    letter-spacing: -2px;
+  }
+
+  .logo-icon .t-grey {
+    color: var(--silver);
+  }
+
+  .logo-icon .t-red {
+    color: var(--accent);
   }
 
   .logo-text {
     color: white;
     font-weight: 700;
-    font-size: 20px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
+    font-size: 16px;
+    letter-spacing: 1px;
   }
+
+  .logo-text .brand-grey { color: var(--silver); }
+  .logo-text .brand-red { color: var(--accent); }
 
   .logo-sub {
     color: rgba(255,255,255,0.45);
@@ -168,7 +177,7 @@
   .hero {
     min-height: 100vh;
     background:
-      linear-gradient(135deg, rgba(44,48,64,0.92) 0%, rgba(53,58,74,0.88) 60%, rgba(204,0,0,0.15) 100%),
+      linear-gradient(135deg, rgba(61,61,61,0.92) 0%, rgba(74,74,74,0.88) 60%, rgba(204,0,0,0.15) 100%),
       url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900"><rect fill="%230D1F35"/><g fill="none" stroke="%23ffffff08" stroke-width="1"><line x1="0" y1="200" x2="1440" y2="200"/><line x1="0" y1="400" x2="1440" y2="400"/><line x1="0" y1="600" x2="1440" y2="600"/><line x1="0" y1="800" x2="1440" y2="800"/><line x1="200" y1="0" x2="200" y2="900"/><line x1="500" y1="0" x2="500" y2="900"/><line x1="800" y1="0" x2="800" y2="900"/><line x1="1100" y1="0" x2="1100" y2="900"/><line x1="1400" y1="0" x2="1400" y2="900"/></g></svg>') center/cover;
     display: flex;
     align-items: center;
@@ -444,7 +453,7 @@
 
   .service-card:hover {
     transform: translateY(-6px);
-    box-shadow: 0 20px 48px rgba(44,48,64,0.12);
+    box-shadow: 0 20px 48px rgba(61,61,61,0.12);
     border-color: transparent;
   }
 
@@ -823,7 +832,7 @@
   }
 
   .testimonial-card:hover {
-    box-shadow: 0 16px 40px rgba(44,48,64,0.1);
+    box-shadow: 0 16px 40px rgba(61,61,61,0.1);
     transform: translateY(-4px);
   }
 
@@ -1045,7 +1054,7 @@
 
   /* ─── FOOTER ────────────────────────────────────────── */
   footer {
-    background: #1A1C24;
+    background: #2A2A2A;
     padding: 80px 0 40px;
   }
 
@@ -1274,9 +1283,9 @@
 <header>
   <div class="header-inner">
     <a href="#" class="logo">
-      <div class="logo-icon">ТТ</div>
+      <div class="logo-icon"><span class="t-grey">Т</span><span class="t-red">Т</span></div>
       <div>
-        <div class="logo-text">ТЕХТРАНС</div>
+        <div class="logo-text"><span class="brand-grey">Транспортные</span> <span class="brand-red">Технологии</span></div>
         <span class="logo-sub">Ж/Д Перевозки · С 2005</span>
       </div>
     </a>
@@ -1924,9 +1933,9 @@
     <div class="footer-top">
       <div class="footer-brand">
         <div class="logo" style="margin-bottom:16px;">
-          <div class="logo-icon">ТТ</div>
+          <div class="logo-icon"><span class="t-grey">Т</span><span class="t-red">Т</span></div>
           <div>
-            <div class="logo-text">ТЕХТРАНС</div>
+            <div class="logo-text"><span class="brand-grey">Транспортные</span> <span class="brand-red">Технологии</span></div>
             <span class="logo-sub">Ж/Д Перевозки</span>
           </div>
         </div>
