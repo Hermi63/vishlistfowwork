@@ -111,6 +111,10 @@ export function getWsUrl(slug: string): string {
   // WebSocket requires an absolute URL — Vercel rewrites don't support WS upgrades.
   // Always connect directly to the backend via NEXT_PUBLIC_API_URL.
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-  const wsBase = apiUrl.replace(/^https/, "wss").replace(/^http(?!s)/, "ws");
+  // Force HTTPS (→ WSS) for non-localhost to prevent Mixed Content on HTTPS pages.
+  const safeUrl = /localhost|127\.0\.0\.1/.test(apiUrl)
+    ? apiUrl
+    : apiUrl.replace(/^http:\/\//, "https://");
+  const wsBase = safeUrl.replace(/^https/, "wss").replace(/^http(?!s)/, "ws");
   return `${wsBase}/ws/${slug}`;
 }
