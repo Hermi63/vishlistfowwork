@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ТЕХТРАНС — Редизайн / Mockup</title>
+<title>Транспортные Технологии — Редизайн / Mockup</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --dark:    #0D1F35;
-    --dark2:   #152A45;
-    --accent:  #E87820;
-    --accent2: #F59233;
+    --dark:    #2C3040;
+    --dark2:   #353A4A;
+    --accent:  #CC0000;
+    --accent2: #E50000;
     --white:   #FFFFFF;
     --gray:    #F5F7FA;
-    --text:    #3D4F61;
+    --text:    #4A4A52;
     --border:  #DDE3EA;
   }
 
@@ -33,7 +33,7 @@
     position: fixed;
     top: 0; left: 0; right: 0;
     z-index: 100;
-    background: rgba(13,31,53,0.97);
+    background: rgba(44,48,64,0.97);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid rgba(255,255,255,0.08);
   }
@@ -140,7 +140,7 @@
   .btn-primary:hover {
     background: var(--accent2);
     transform: translateY(-1px);
-    box-shadow: 0 8px 24px rgba(232,120,32,0.4);
+    box-shadow: 0 8px 24px rgba(204,0,0,0.4);
   }
 
   .btn-ghost {
@@ -168,7 +168,7 @@
   .hero {
     min-height: 100vh;
     background:
-      linear-gradient(135deg, rgba(13,31,53,0.92) 0%, rgba(21,42,69,0.88) 60%, rgba(232,120,32,0.15) 100%),
+      linear-gradient(135deg, rgba(44,48,64,0.92) 0%, rgba(53,58,74,0.88) 60%, rgba(204,0,0,0.15) 100%),
       url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900"><rect fill="%230D1F35"/><g fill="none" stroke="%23ffffff08" stroke-width="1"><line x1="0" y1="200" x2="1440" y2="200"/><line x1="0" y1="400" x2="1440" y2="400"/><line x1="0" y1="600" x2="1440" y2="600"/><line x1="0" y1="800" x2="1440" y2="800"/><line x1="200" y1="0" x2="200" y2="900"/><line x1="500" y1="0" x2="500" y2="900"/><line x1="800" y1="0" x2="800" y2="900"/><line x1="1100" y1="0" x2="1100" y2="900"/><line x1="1400" y1="0" x2="1400" y2="900"/></g></svg>') center/cover;
     display: flex;
     align-items: center;
@@ -182,7 +182,7 @@
     position: absolute;
     right: -200px; top: -100px;
     width: 700px; height: 700px;
-    background: radial-gradient(circle, rgba(232,120,32,0.12) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(204,0,0,0.12) 0%, transparent 70%);
     pointer-events: none;
   }
 
@@ -209,8 +209,8 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: rgba(232,120,32,0.15);
-    border: 1px solid rgba(232,120,32,0.3);
+    background: rgba(204,0,0,0.15);
+    border: 1px solid rgba(204,0,0,0.3);
     color: var(--accent2);
     font-size: 12px;
     font-weight: 600;
@@ -444,7 +444,7 @@
 
   .service-card:hover {
     transform: translateY(-6px);
-    box-shadow: 0 20px 48px rgba(13,31,53,0.12);
+    box-shadow: 0 20px 48px rgba(44,48,64,0.12);
     border-color: transparent;
   }
 
@@ -452,7 +452,7 @@
 
   .service-icon {
     width: 56px; height: 56px;
-    background: rgba(232,120,32,0.1);
+    background: rgba(204,0,0,0.1);
     border-radius: 14px;
     display: flex; align-items: center; justify-content: center;
     margin-bottom: 24px;
@@ -498,7 +498,7 @@
     position: absolute;
     left: -300px; top: -200px;
     width: 600px; height: 600px;
-    background: radial-gradient(circle, rgba(232,120,32,0.08) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(204,0,0,0.08) 0%, transparent 70%);
   }
 
   .advantages .section-title { color: white; }
@@ -639,8 +639,8 @@
   }
 
   @keyframes dotPulse {
-    0%, 100% { box-shadow: 0 0 0 4px rgba(232,120,32,0.2); }
-    50% { box-shadow: 0 0 0 10px rgba(232,120,32,0.05); }
+    0%, 100% { box-shadow: 0 0 0 4px rgba(204,0,0,0.2); }
+    50% { box-shadow: 0 0 0 10px rgba(204,0,0,0.05); }
   }
 
   .geo-stats {
@@ -660,11 +660,11 @@
     transition: border-color .2s;
   }
 
-  .geo-stat:hover { border-color: rgba(232,120,32,0.3); }
+  .geo-stat:hover { border-color: rgba(204,0,0,0.3); }
 
   .geo-stat-icon {
     width: 50px; height: 50px;
-    background: rgba(232,120,32,0.12);
+    background: rgba(204,0,0,0.12);
     border-radius: 12px;
     display: flex; align-items: center; justify-content: center;
     font-size: 22px;
@@ -698,7 +698,7 @@
     position: absolute;
     right: -100px; bottom: -100px;
     width: 500px; height: 500px;
-    background: radial-gradient(circle, rgba(232,120,32,0.1) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(204,0,0,0.1) 0%, transparent 70%);
   }
 
   .lead-form-inner {
@@ -732,7 +732,7 @@
 
   .trust-icon {
     width: 32px; height: 32px;
-    background: rgba(232,120,32,0.15);
+    background: rgba(204,0,0,0.15);
     border-radius: 8px;
     display: flex; align-items: center; justify-content: center;
     font-size: 16px;
@@ -823,7 +823,7 @@
   }
 
   .testimonial-card:hover {
-    box-shadow: 0 16px 40px rgba(13,31,53,0.1);
+    box-shadow: 0 16px 40px rgba(44,48,64,0.1);
     transform: translateY(-4px);
   }
 
@@ -915,7 +915,7 @@
     color: var(--accent);
   }
 
-  .faq-item.open .faq-arrow { transform: rotate(180deg); background: rgba(232,120,32,0.1); }
+  .faq-item.open .faq-arrow { transform: rotate(180deg); background: rgba(204,0,0,0.1); }
 
   .faq-answer {
     padding: 0 24px;
@@ -1045,7 +1045,7 @@
 
   /* ─── FOOTER ────────────────────────────────────────── */
   footer {
-    background: #060E18;
+    background: #1A1C24;
     padding: 80px 0 40px;
   }
 
@@ -1148,13 +1148,13 @@
   .float-phone {
     background: var(--accent);
     color: white;
-    box-shadow: 0 8px 24px rgba(232,120,32,0.4);
+    box-shadow: 0 8px 24px rgba(204,0,0,0.4);
     animation: floatPulse 3s infinite;
   }
 
   @keyframes floatPulse {
-    0%, 100% { box-shadow: 0 8px 24px rgba(232,120,32,0.4); }
-    50% { box-shadow: 0 8px 32px rgba(232,120,32,0.7); }
+    0%, 100% { box-shadow: 0 8px 24px rgba(204,0,0,0.4); }
+    50% { box-shadow: 0 8px 32px rgba(204,0,0,0.7); }
   }
 
   .float-btn:hover { transform: scale(1.1); }
