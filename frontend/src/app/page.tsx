@@ -1,14 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Gift, Share2, Users, Eye } from "lucide-react";
+import { Share2, Users, Eye } from "lucide-react";
 
 export default function Home() {
   return (
     <div className="flex flex-col items-center pt-12 text-center">
-      <div className="mb-4 rounded-full bg-blue-100 p-4 dark:bg-blue-900/30">
-        <Gift className="h-12 w-12 text-blue-600" />
+      <div className="mb-6">
+        <Image src="/logo.png" alt="Транспортные Технологии" width={220} height={80} style={{objectFit:"contain"}} priority />
       </div>
       <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">
         Социальный вишлист
