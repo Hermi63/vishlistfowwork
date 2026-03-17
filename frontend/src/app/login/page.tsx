@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, lazy, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -8,8 +8,40 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
-import { GoogleButton } from "@/components/google-button";
 import { Gift } from "lucide-react";
+
+// Ленивая загрузка Google кнопки
+const GoogleButton = lazy(() =>
+  import("@/components/google-button").then((m) => ({ default: m.GoogleButton }))
+);
+
+// Создаёт вишлист из черновика в localStorage
+async function createFromDraft() {
+  const raw = localStorage.getItem("wishlist_draft");
+  if (!raw) return null;
+  try {
+    const draft = JSON.parse(raw);
+    const res = await api.createWishlist({
+      title: draft.title,
+      description: draft.description,
+      event_date: draft.event_date,
+    });
+    if (draft.items?.length) {
+      for (const item of draft.items) {
+        await api.addItem(res.slug, {
+          title: item.title,
+          url: item.url,
+          price: item.price ? parseFloat(item.price) : undefined,
+        });
+      }
+    }
+    localStorage.removeItem("wishlist_draft");
+    return res.slug;
+  } catch {
+    localStorage.removeItem("wishlist_draft");
+    return null;
+  }
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,17 +51,28 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const handlePostAuth = useCallback(
+    async (token: string, userData: { id: number; email: string; name: string }) => {
+      login(token, userData);
+      const slug = await createFromDraft();
+      if (slug) {
+        router.push(`/wishlist/${slug}`);
+        return;
+      }
+      router.push("/dashboard");
+    },
+    [login, router]
+  );
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
       const res = await api.login({ email, password });
-      login(res.access_token, res.user);
-      router.push("/dashboard");
+      await handlePostAuth(res.access_token, res.user);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Ошибка входа");
-    } finally {
       setLoading(false);
     }
   }
@@ -40,15 +83,13 @@ export default function LoginPage() {
       setLoading(true);
       try {
         const res = await api.googleAuth(idToken);
-        login(res.access_token, res.user);
-        router.push("/dashboard");
+        await handlePostAuth(res.access_token, res.user);
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : "Ошибка входа через Google");
-      } finally {
         setLoading(false);
       }
     },
-    [login, router]
+    [handlePostAuth]
   );
 
   return (
@@ -62,7 +103,15 @@ export default function LoginPage() {
           <p className="mt-1 text-sm text-muted">Войдите в свой аккаунт</p>
         </div>
 
-        <GoogleButton onSuccess={handleGoogleSuccess} onError={setError} />
+        <Suspense
+          fallback={
+            <div className="flex h-[44px] w-full items-center justify-center rounded-lg border-2 border-[var(--border)] bg-surface-hover animate-pulse">
+              <span className="text-sm text-muted">Загрузка Google...</span>
+            </div>
+          }
+        >
+          <GoogleButton onSuccess={handleGoogleSuccess} onError={setError} />
+        </Suspense>
 
         <div className="my-6 flex items-center gap-3 text-sm text-muted">
           <span className="flex-1 border-t border-[var(--border)]" />
