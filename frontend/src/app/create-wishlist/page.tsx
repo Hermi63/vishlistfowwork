@@ -141,7 +141,7 @@ export default function CreateWishlistPage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Расскажите что за повод..."
-              className="flex min-h-[100px] w-full rounded-xl border-2 border-[var(--border)] bg-surface px-4 py-3 text-sm transition-all duration-200 placeholder:text-muted focus:outline-none focus:border-accent focus:ring-4 focus:ring-accent/10 resize-none"
+              className="flex min-h-[100px] w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-zinc-100 transition-all duration-200 placeholder:text-zinc-500 focus:outline-none focus:border-accent/50 focus:ring-4 focus:ring-accent/10 resize-none"
             />
           </div>
           <div>

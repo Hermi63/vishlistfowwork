@@ -270,7 +270,7 @@ export default function WishlistPage() {
                     value={newDescription}
                     onChange={(e) => setNewDescription(e.target.value)}
                     placeholder="Почему хочется именно это..."
-                    className="flex min-h-[80px] w-full rounded-xl border-2 border-[var(--border)] bg-surface px-4 py-3 text-sm transition-all duration-200 placeholder:text-muted focus:outline-none focus:border-accent focus:ring-4 focus:ring-accent/10 resize-none"
+                    className="flex min-h-[80px] w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-zinc-100 transition-all duration-200 placeholder:text-zinc-500 focus:outline-none focus:border-accent/50 focus:ring-4 focus:ring-accent/10 resize-none"
                   />
                 </div>
                 <Button type="submit" variant="gradient" disabled={addLoading} className="w-full">
