@@ -1,7 +1,7 @@
 import ipaddress
 import re
 import socket
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 import httpx
 from bs4 import BeautifulSoup
@@ -75,7 +75,15 @@ async def fetch_link_preview(url: str) -> dict:
             async with client.stream(
                 "GET",
                 url,
-                headers={"User-Agent": "Mozilla/5.0 (compatible; WishListBot/1.0)"},
+                headers={
+                    "User-Agent": (
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                        "AppleWebKit/537.36 (KHTML, like Gecko) "
+                        "Chrome/124.0.0.0 Safari/537.36"
+                    ),
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                    "Accept-Language": "ru-RU,ru;q=0.9,en;q=0.5",
+                },
             ) as resp:
                 resp.raise_for_status()
                 # Enforce size limit — read at most _MAX_BODY_BYTES
@@ -92,21 +100,62 @@ async def fetch_link_preview(url: str) -> dict:
 
     soup = BeautifulSoup(body, "html.parser")
 
-    # OpenGraph
-    og_title = soup.find("meta", property="og:title")
-    og_image = soup.find("meta", property="og:image")
-    og_desc = soup.find("meta", property="og:description")
+    def _meta_content(tag):
+        """Извлечь content из мета-тега."""
+        if tag and tag.get("content"):
+            return tag["content"].strip()
+        return None
 
-    result["title"] = og_title["content"] if og_title and og_title.get("content") else None
-    result["image"] = og_image["content"] if og_image and og_image.get("content") else None
-    result["description"] = og_desc["content"] if og_desc and og_desc.get("content") else None
+    def _to_absolute(src: str | None) -> str | None:
+        """Преобразовать относительный URL в абсолютный."""
+        if not src:
+            return None
+        src = src.strip()
+        if src.startswith(("http://", "https://")):
+            return src
+        if src.startswith("//"):
+            return "https:" + src
+        return urljoin(url, src)
 
+    # OpenGraph (проверяем и property, и name — сайты используют оба варианта)
+    og_title = soup.find("meta", property="og:title") or soup.find("meta", attrs={"name": "og:title"})
+    og_image = soup.find("meta", property="og:image") or soup.find("meta", attrs={"name": "og:image"})
+    og_desc = soup.find("meta", property="og:description") or soup.find("meta", attrs={"name": "og:description"})
+
+    result["title"] = _meta_content(og_title)
+    result["image"] = _to_absolute(_meta_content(og_image))
+    result["description"] = _meta_content(og_desc)
+
+    # Фоллбэк для title — <title> тег
     if not result["title"]:
         title_tag = soup.find("title")
         if title_tag:
             result["title"] = title_tag.get_text(strip=True)
 
-    # Try to find price
+    # Фоллбэки для изображения если og:image не найден
+    if not result["image"]:
+        # twitter:image
+        tw_image = soup.find("meta", attrs={"name": "twitter:image"}) or soup.find("meta", property="twitter:image")
+        if tw_image:
+            result["image"] = _to_absolute(_meta_content(tw_image))
+
+    if not result["image"]:
+        # itemprop="image" (Schema.org)
+        schema_img = soup.find("meta", attrs={"itemprop": "image"})
+        if schema_img:
+            result["image"] = _to_absolute(_meta_content(schema_img))
+
+    if not result["image"]:
+        # Первый достаточно большой <img> тег на странице (вероятно фото товара)
+        for img_tag in soup.find_all("img", src=True, limit=10):
+            src = img_tag.get("src", "")
+            # Пропускаем крошечные иконки, трекеры и data-URI
+            if any(skip in src.lower() for skip in ("1x1", "pixel", "track", "data:image", ".svg", "logo", "icon")):
+                continue
+            result["image"] = _to_absolute(src)
+            break
+
+    # Цена
     og_price = soup.find("meta", property="og:price:amount") or soup.find(
         "meta", property="product:price:amount"
     )
