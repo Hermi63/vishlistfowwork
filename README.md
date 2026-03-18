@@ -1,220 +1,163 @@
-# WishList — Социальный вишлист
+# WishList — Социальная платформа вишлистов
 
-Веб-приложение для создания списков желаний с возможностью резервирования подарков и совместного сбора средств.
+> Тестовый full-stack проект: от анализа рынка и проектирования архитектуры до деплоя в продакшн.
 
-## Возможности
+---
 
-- Регистрация и авторизация (email + пароль)
-- Создание, редактирование, удаление вишлистов
-- Публичные ссылки (работают без регистрации)
-- Добавление подарков с автозаполнением из ссылки (OpenGraph)
-- Резервирование подарков друзьями
-- Совместный сбор средств на дорогие подарки (с прогресс-баром)
-- Realtime обновления через WebSocket
-- Сохранение сюрприза: владелец НЕ видит, кто зарезервировал или скинулся
+## О проекте
 
-## Технологии
+Веб-приложение для создания списков желаний. Друзья видят вишлист по публичной ссылке, резервируют подарки или **скидываются вместе** на дорогой — и всё это скрыто от именинника.
 
-| Компонент | Технология |
-|-----------|------------|
-| Frontend  | Next.js 14, React, TypeScript, Tailwind CSS |
-| Backend   | FastAPI, SQLAlchemy (async), Python 3.12 |
-| Database  | PostgreSQL |
-| Realtime  | WebSockets |
+**Ключевые фичи:**
+- Публичные вишлисты по уникальному slug (гостям не нужна регистрация)
+- Автозаполнение из ссылки — вставил URL магазина → название, фото, цена
+- Резервирование подарков (скрыто от владельца)
+- Совместный сбор средств с прогресс-баром
+- Realtime через WebSocket
+- Специальные парсеры для WB/Ozon (антибот-обход)
 
-## Структура проекта
+---
+
+## Стек
+
+| Слой | Технологии |
+|------|-----------|
+| Frontend | Next.js 14, React 18, TypeScript, Tailwind CSS |
+| Backend | FastAPI, SQLAlchemy 2.0 (async), Pydantic v2 |
+| Database | PostgreSQL + asyncpg |
+| Realtime | WebSocket |
+| Deploy | Vercel + Railway + Supabase |
+
+---
+
+## Архитектурные решения
+
+### Почему FastAPI + Next.js?
+Раздельный деплой фронта и бэка, независимое масштабирование. FastAPI — автогенерация OpenAPI-документации, нативный async для WebSocket и парсинга ссылок.
+
+### Как сохраняется сюрприз?
+API проверяет `is_owner` при сериализации — владелец видит статус подарка, но **не видит** кто зарезервировал и кто сколько скинулся.
+
+### Парсинг ссылок магазинов
+Ozon и WB блокируют обычные HTTP-запросы (антибот, 403). Решение — многоуровневый подход:
+1. Прямой парсинг OpenGraph (большинство сайтов)
+2. Специальный парсер WB — URL картинки по формуле из ID товара (без запроса к сайту)
+3. API `card.wb.ru` — название и цена
+4. microlink.io — фоллбэк для защищённых сайтов
+
+### Crowdfunding-логика
+Вычисления через `Decimal` — нет ошибок округления. Статусы: `available` → `crowdfunding` → `funded`. При отмене взноса — пересчёт и возврат статуса.
+
+---
+
+## Процесс разработки
 
 ```
-├── backend/
-│   ├── app/
-│   │   ├── core/          # Config, database, security, deps
-│   │   ├── models/        # SQLAlchemy models
-│   │   ├── routers/       # API endpoints
-│   │   ├── schemas/       # Pydantic schemas
-│   │   ├── services/      # WebSocket manager, link preview
-│   │   └── main.py        # FastAPI app
-│   ├── schema.sql         # Raw SQL schema
-│   ├── requirements.txt
-│   └── Dockerfile
-├── frontend/
-│   ├── src/
-│   │   ├── app/           # Next.js pages (App Router)
-│   │   ├── components/    # React components
-│   │   └── lib/           # API client, auth context, utils
-│   ├── Dockerfile
-│   └── package.json
-├── docker-compose.yml
-└── README.md
+1. Базовая архитектура — модели, API, фронт
+2. Google OAuth
+3. Аудит безопасности — 9 уязвимостей найдено и исправлено
+4. Интеграционные тесты всех API-эндпоинтов
+5. Деплой — Vercel + Railway + Supabase + автоматический скрипт
+6. Баг-фиксы — Mixed Content, CORS, WSS
+7. Редизайн UI — тёмная тема, анимации, 3D-элементы
+8. Фикс парсинга изображений — WB/Ozon фоллбэки
 ```
 
-## Быстрый старт (Docker)
+### Какие вопросы возникли в процессе
+
+**«Как гости координируют сбор на подарок?»**
+Текущая механика: гость вводит имя и сумму → `Contribution` → прогресс-бар. Но нет места для обсуждения «кто сколько скидывается» — координация уходит в мессенджеры. Это осознанное ограничение MVP.
+
+**«Как парсить ссылки, если магазины блокируют ботов?»**
+Ozon — 403 Antibot Challenge, WB — 498. Прямой HTTP-запрос бесполезен. Решение: для WB можно формировать URL картинки математически из ID товара, без запросов к сайту вообще.
+
+**«Что делать с ошибками округления при сборе?»**
+Float-арифметика: `0.1 + 0.2 ≠ 0.3`. Все вычисления переведены на `Decimal` — сравнение суммы вкладов с ценой всегда точное.
+
+---
+
+## Анализ рынка
+
+Изучил конкурентов перед проектированием crowdfunding-механики:
+
+| Сервис | Деньги | Чат | Приватность сумм | Особенность |
+|--------|:------:|:---:|:----------------:|-------------|
+| Amazon Group Gift | реальные | нет | опционально | Только товары Amazon |
+| Presently | реальные | сообщения | да | Суммы скрыты — нет давления |
+| GiftCrowd | реальные | видео/текст | нет | 400+ брендов на выбор |
+| WB Сборы | реальные | нет | нет | Внутри маркетплейса |
+| FlashGift | реальные | Telegram | нет | «Позор-статус» для ленивых |
+| **Этот проект** | отметки | нет (MVP) | да | Открытая архитектура |
+
+**Ключевые выводы:**
+- Лидеры скрывают суммы от именинника — снимает давление *(реализовано)*
+- Без регистрации для гостей — обязателено *(реализовано)*
+- Чат дарителей — главная недостающая фича для координации
+- Прогресс-бар мотивирует «добить» цель *(реализовано)*
+
+---
+
+## Планы развития
+
+### Следующие фичи
+- **Комментарии к подарку** — видны только гостям, не владельцу (сюрприз)
+- **Страница сбора** — отдельная ссылка с калькулятором «разделить на N человек»
+- **Подписка «Слежу»** — следить за сбором, не внося деньги сразу
+- **Telegram-бот** — напоминания, координация в групповых чатах
+- **Персональные поздравления** — каждый даритель оставляет сообщение → цифровая открытка
+
+### Монетизация (если развивать в продукт)
+
+| Модель | Описание |
+|--------|----------|
+| **Freemium** | Бесплатно до 3 вишлистов. Премиум — безлимит, кастомные темы |
+| **Комиссия со сборов** | 2-5% при реальных переводах (ЮKassa / Stripe) |
+| **Партнёрские ссылки** | Кэшбек с покупок через партнёров (3-10%) |
+| **White-label** | Брендированные вишлисты для корпоративных подарков |
+
+---
+
+## Запуск
 
 ```bash
+# Docker — всё сразу
 docker compose up --build
+# → Frontend: localhost:3000 | Backend: localhost:8000 | Docs: localhost:8000/docs
 ```
 
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8000
-- API Docs: http://localhost:8000/docs
-
-## Локальная разработка
-
-### Backend
+Или по отдельности:
 
 ```bash
-cd backend
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env
-# Отредактируйте .env — укажите DATABASE_URL
-
+# Backend
+cd backend && pip install -r requirements.txt
+cp .env.example .env  # DATABASE_URL, SECRET_KEY
 uvicorn app.main:app --reload
-```
 
-### Frontend
-
-```bash
-cd frontend
-npm install
-cp .env.example .env.local
-# Отредактируйте .env.local — укажите NEXT_PUBLIC_API_URL
-
+# Frontend
+cd frontend && npm install
+cp .env.example .env.local  # NEXT_PUBLIC_API_URL
 npm run dev
 ```
 
-## База данных
+---
 
-Таблицы создаются автоматически при первом запуске (SQLAlchemy `create_all`).
+## Структура
 
-SQL-схема для справки: `backend/schema.sql`
+```
+backend/app/
+  core/        — конфиг, БД, JWT, зависимости
+  models/      — User, Wishlist, WishlistItem, Reservation, Contribution
+  routers/     — auth, wishlists, items, preview, ws
+  schemas/     — Pydantic-валидация
+  services/    — WebSocket manager, парсинг ссылок
+  tests/       — интеграционные тесты
 
-### Таблицы
-
-- `users` — пользователи
-- `wishlists` — списки желаний (slug для публичных ссылок)
-- `wishlist_items` — подарки (статусы: available, reserved, crowdfunding, funded)
-- `reservations` — резервации (скрыты от владельца)
-- `contributions` — вклады в сбор средств (скрыты от владельца)
-
-## API Endpoints
-
-| Method | Endpoint | Описание |
-|--------|----------|----------|
-| POST | `/api/auth/register` | Регистрация |
-| POST | `/api/auth/login` | Вход |
-| GET | `/api/auth/me` | Текущий пользователь |
-| GET | `/api/wishlists/my` | Мои вишлисты |
-| POST | `/api/wishlists/` | Создать вишлист |
-| GET | `/api/wishlists/{slug}` | Получить вишлист (публичный) |
-| PUT | `/api/wishlists/{slug}` | Обновить вишлист |
-| DELETE | `/api/wishlists/{slug}` | Удалить вишлист |
-| POST | `/api/wishlists/{slug}/items/` | Добавить подарок |
-| PUT | `/api/wishlists/{slug}/items/{id}` | Обновить подарок |
-| DELETE | `/api/wishlists/{slug}/items/{id}` | Удалить подарок |
-| POST | `/api/wishlists/{slug}/items/{id}/reserve` | Зарезервировать |
-| DELETE | `/api/wishlists/{slug}/items/{id}/reserve` | Отменить резерв |
-| POST | `/api/wishlists/{slug}/items/{id}/contribute` | Внести вклад |
-| DELETE | `/api/wishlists/{slug}/items/{id}/contribute/{cid}` | Удалить вклад |
-| POST | `/api/link-preview` | Получить OpenGraph данные |
-| WS | `/ws/{slug}` | Realtime обновления |
-
-## Деплой
-
-### Быстрый деплой (автоматический)
-
-```bash
-# Установите CLI-инструменты:
-npm i -g @railway/cli vercel
-
-# Запустите скрипт:
-./deploy.sh
+frontend/src/
+  app/         — Next.js App Router
+  components/  — gift-card, navbar, ui/
+  lib/         — API-клиент, auth-контекст
 ```
 
-Скрипт последовательно:
-1. Запросит DATABASE_URL от Supabase
-2. Задеплоит backend на Railway с правильными env vars
-3. Задеплоит frontend на Vercel с `NEXT_PUBLIC_API_URL`
-4. Настроит CORS автоматически
-5. Выведет все URL и переменные
+---
 
-### Ручной деплой
-
-#### 1. База данных — Supabase (бесплатно)
-
-1. Зайдите на [supabase.com](https://supabase.com) → New Project
-2. Settings → Database → Connection string → URI
-3. Замените `postgresql://` на `postgresql+asyncpg://`
-4. Таблицы создадутся автоматически при первом запуске backend
-
-#### 2. Backend — Railway
-
-1. [railway.app](https://railway.app) → New Project → Deploy from GitHub repo
-2. Root Directory: `backend`
-3. Environment Variables:
-
-| Переменная | Значение |
-|-----------|----------|
-| `DATABASE_URL` | `postgresql+asyncpg://...` (из Supabase) |
-| `SECRET_KEY` | `python -c "import secrets; print(secrets.token_hex(32))"` |
-| `CORS_ORIGINS` | `https://your-app.vercel.app` |
-| `APP_ENV` | `production` |
-
-4. Railway автоматически подхватит `Dockerfile` и `railway.json`
-5. Сгенерируйте публичный домен: Settings → Networking → Generate Domain
-
-#### 3. Frontend — Vercel
-
-1. [vercel.com](https://vercel.com) → Add New → Project → Import GitHub repo
-2. Root Directory: `frontend`
-3. Framework Preset: `Next.js`
-4. Environment Variables:
-
-| Переменная | Значение |
-|-----------|----------|
-| `NEXT_PUBLIC_API_URL` | `https://your-backend.up.railway.app` |
-
-5. Deploy!
-
-#### 4. Проверка
-
-```bash
-# Backend health check
-curl https://your-backend.up.railway.app/api/health
-
-# WebSocket (должен вернуть upgrade)
-wscat -c wss://your-backend.up.railway.app/ws/test-slug
-```
-
-### Переменные окружения (полный список)
-
-**Backend (Railway):**
-| Переменная | Обязательная | Описание |
-|-----------|:---:|----------|
-| `DATABASE_URL` | да | PostgreSQL строка подключения (`postgresql+asyncpg://...`) |
-| `SECRET_KEY` | да | Секрет для JWT (min 32 символа) |
-| `CORS_ORIGINS` | да | URL фронтенда (через запятую) |
-| `APP_ENV` | нет | `production` для строгих проверок |
-| `GOOGLE_CLIENT_ID` | нет | Для Google OAuth |
-
-**Frontend (Vercel):**
-| Переменная | Обязательная | Описание |
-|-----------|:---:|----------|
-| `NEXT_PUBLIC_API_URL` | да | URL бэкенда |
-| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | нет | Для Google OAuth |
-
-## Безопасность
-
-- JWT-авторизация с bcrypt-хешированием паролей
-- Владелец видит статусы подарков, но НЕ видит кто зарезервировал/скинулся
-- Редактирование/удаление доступно только владельцу
-- Защита от двойного резервирования (UNIQUE constraint + проверка статуса)
-- CORS настроен на конкретные origins
-
-## Edge Cases
-
-- Двойное резервирование: блокируется проверкой статуса + unique constraint
-- Отмена резерва: только тем, кто зарезервировал
-- Полностью профинансированный подарок: статус `funded`, вклады закрыты
-- Удаление вишлиста: каскадное удаление всех подарков, резервов, вкладов
-- Подарок без цены: сбор средств работает без прогресс-бара
+**Автор:** [@Hermi63](https://github.com/Hermi63)
