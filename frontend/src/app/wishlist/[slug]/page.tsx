@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { GiftCard } from "@/components/gift-card";
 import { useAuth } from "@/lib/auth-context";
 import { api, getWsUrl } from "@/lib/api";
+import { useToast } from "@/components/ui/toast";
 import {
   CalendarDays,
   Plus,
@@ -64,6 +65,7 @@ export default function WishlistPage() {
   const [previewLoading, setPreviewLoading] = useState(false);
 
   const wsRef = useRef<WebSocket | null>(null);
+  const { toast } = useToast();
 
   const fetchData = useCallback(async () => {
     try {
@@ -127,7 +129,7 @@ export default function WishlistPage() {
       setShowAddForm(false);
       fetchData();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Error");
+      toast(e instanceof Error ? e.message : "Ошибка добавления", "error");
     } finally {
       setAddLoading(false);
     }
@@ -135,7 +137,7 @@ export default function WishlistPage() {
 
   function copyLink() {
     navigator.clipboard.writeText(window.location.href);
-    alert("Ссылка скопирована!");
+    toast("Ссылка скопирована!");
   }
 
   if (loading) {
@@ -242,7 +244,6 @@ export default function WishlistPage() {
                     value={newTitle}
                     onChange={(e) => setNewTitle(e.target.value)}
                     placeholder="Название подарка"
-                    required
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">

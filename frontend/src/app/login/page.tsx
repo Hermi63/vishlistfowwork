@@ -50,6 +50,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const handlePostAuth = useCallback(
     async (token: string, userData: { id: number; email: string; name: string }) => {
@@ -64,8 +65,18 @@ export default function LoginPage() {
     [login, router]
   );
 
+  function validate(): boolean {
+    const errors: Record<string, string> = {};
+    if (!email.trim()) errors.email = "Введите email";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = "Некорректный email";
+    if (!password) errors.password = "Введите пароль";
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!validate()) return;
     setError("");
     setLoading(true);
     try {
@@ -119,26 +130,32 @@ export default function LoginPage() {
           <span className="flex-1 border-t border-[var(--border)]" />
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
           <div>
             <label className="mb-1.5 block text-sm font-semibold">Email</label>
             <Input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => { setEmail(e.target.value); setFieldErrors((p) => ({ ...p, email: "" })); }}
               placeholder="your@email.com"
-              required
+              className={fieldErrors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""}
             />
+            {fieldErrors.email && (
+              <p className="mt-1.5 text-xs text-red-500">{fieldErrors.email}</p>
+            )}
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-semibold">Пароль</label>
             <Input
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => { setPassword(e.target.value); setFieldErrors((p) => ({ ...p, password: "" })); }}
               placeholder="••••••••"
-              required
+              className={fieldErrors.password ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""}
             />
+            {fieldErrors.password && (
+              <p className="mt-1.5 text-xs text-red-500">{fieldErrors.password}</p>
+            )}
           </div>
           {error && (
             <div className="rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-600 dark:text-red-400 animate-slide-down">

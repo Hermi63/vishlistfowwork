@@ -5,6 +5,7 @@ import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Progress } from "./ui/progress";
+import { useToast } from "./ui/toast";
 import { api } from "@/lib/api";
 import {
   ExternalLink,
@@ -43,6 +44,7 @@ export function GiftCard({ item, slug, isOwner, onUpdate }: GiftCardProps) {
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
+  const { toast, confirm } = useToast();
 
   const statusLabel: Record<string, { text: string; color: string; icon: React.ReactNode }> = {
     available: {
@@ -78,7 +80,7 @@ export function GiftCard({ item, slug, isOwner, onUpdate }: GiftCardProps) {
       setShowReserve(false);
       setName("");
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Error");
+      toast(e instanceof Error ? e.message : "Ошибка резервирования", "error");
     } finally {
       setLoading(false);
     }
@@ -90,7 +92,7 @@ export function GiftCard({ item, slug, isOwner, onUpdate }: GiftCardProps) {
       await api.unreserveItem(slug, item.id);
       onUpdate();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Error");
+      toast(e instanceof Error ? e.message : "Ошибка снятия резерва", "error");
     } finally {
       setLoading(false);
     }
@@ -106,19 +108,20 @@ export function GiftCard({ item, slug, isOwner, onUpdate }: GiftCardProps) {
       setName("");
       setAmount("");
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Error");
+      toast(e instanceof Error ? e.message : "Ошибка вклада", "error");
     } finally {
       setLoading(false);
     }
   }
 
   async function handleDeleteItem() {
-    if (!confirm("Удалить подарок?")) return;
+    const ok = await confirm("Удалить подарок?");
+    if (!ok) return;
     try {
       await api.deleteItem(slug, item.id);
       onUpdate();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Error");
+      toast(e instanceof Error ? e.message : "Ошибка удаления", "error");
     }
   }
 

@@ -34,6 +34,7 @@ export default function CreateWishlistPage() {
   const [itemUrl, setItemUrl] = useState("");
   const [itemPrice, setItemPrice] = useState("");
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   function addItem() {
     if (!itemTitle.trim()) return;
@@ -75,6 +76,11 @@ export default function CreateWishlistPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!title.trim()) {
+      setFieldErrors({ title: "Введите название" });
+      return;
+    }
+    setFieldErrors({});
     setError("");
     setLoading(true);
 
@@ -125,15 +131,18 @@ export default function CreateWishlistPage() {
             {user ? "Заполните информацию о событии" : "Регистрация не нужна — просто заполните форму"}
           </p>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} noValidate className="space-y-5">
           <div>
             <label className="mb-1.5 block text-sm font-semibold">Название *</label>
             <Input
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => { setTitle(e.target.value); setFieldErrors({}); }}
               placeholder="День рождения, Новый год..."
-              required
+              className={fieldErrors.title ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""}
             />
+            {fieldErrors.title && (
+              <p className="mt-1.5 text-xs text-red-500">{fieldErrors.title}</p>
+            )}
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-semibold">Описание</label>

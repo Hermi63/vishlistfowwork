@@ -22,6 +22,7 @@ declare global {
               locale?: string;
             }
           ) => void;
+          cancel: () => void;
         };
       };
     };
@@ -38,24 +39,35 @@ export function GoogleButton({ onSuccess, onError }: GoogleButtonProps) {
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
   const [loaded, setLoaded] = useState(false);
 
-  useEffect(() => {
-    if (!clientId) return;
+  // Стабильные ссылки на колбэки — не вызывают ре-инициализацию
+  const onSuccessRef = useRef(onSuccess);
+  const onErrorRef = useRef(onError);
+  onSuccessRef.current = onSuccess;
+  onErrorRef.current = onError;
 
+  useEffect(() => {
+    if (!clientId || !containerRef.current) return;
+
+    const container = containerRef.current;
     const scriptId = "google-gsi-script";
 
     function initButton() {
-      if (!window.google || !containerRef.current) return;
+      if (!window.google || !container) return;
+
+      // Очищаем контейнер перед повторной инициализацией
+      container.innerHTML = "";
+
       window.google.accounts.id.initialize({
         client_id: clientId!,
         callback: (response) => {
           if (response.credential) {
-            onSuccess(response.credential);
+            onSuccessRef.current(response.credential);
           } else {
-            onError?.("Google не вернул токен");
+            onErrorRef.current?.("Google не вернул токен");
           }
         },
       });
-      window.google.accounts.id.renderButton(containerRef.current, {
+      window.google.accounts.id.renderButton(container, {
         theme: "outline",
         size: "large",
         width: 368,
@@ -66,11 +78,9 @@ export function GoogleButton({ onSuccess, onError }: GoogleButtonProps) {
     }
 
     if (document.getElementById(scriptId)) {
-      // Скрипт уже загружен — если google готов, инициализируем сразу
       if (window.google) {
         initButton();
       } else {
-        // Скрипт есть в DOM, но ещё не загрузился
         const existing = document.getElementById(scriptId) as HTMLScriptElement;
         existing.addEventListener("load", initButton);
       }
@@ -84,7 +94,7 @@ export function GoogleButton({ onSuccess, onError }: GoogleButtonProps) {
     script.defer = true;
     script.onload = initButton;
     document.head.appendChild(script);
-  }, [clientId, onSuccess, onError]);
+  }, [clientId]);
 
   if (!clientId) return null;
 

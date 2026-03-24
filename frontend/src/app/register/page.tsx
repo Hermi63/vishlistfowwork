@@ -55,6 +55,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // После успешной авторизации — проверяем черновик и редиректим
   const handlePostAuth = useCallback(
@@ -71,8 +72,20 @@ export default function RegisterPage() {
     [login, router]
   );
 
+  function validate(): boolean {
+    const errors: Record<string, string> = {};
+    if (!name.trim()) errors.name = "Введите имя";
+    if (!email.trim()) errors.email = "Введите email";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = "Некорректный email";
+    if (!password) errors.password = "Введите пароль";
+    else if (password.length < 8) errors.password = "Минимум 8 символов";
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!validate()) return;
     setError("");
     setLoading(true);
     try {
@@ -98,6 +111,10 @@ export default function RegisterPage() {
     },
     [handlePostAuth]
   );
+
+  function clearFieldError(field: string) {
+    setFieldErrors((p) => ({ ...p, [field]: "" }));
+  }
 
   return (
     <div className="flex min-h-[80vh] items-center justify-center px-4">
@@ -128,36 +145,44 @@ export default function RegisterPage() {
           <span className="flex-1 border-t border-[var(--border)]" />
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
           <div>
             <label className="mb-1.5 block text-sm font-semibold">Имя</label>
             <Input
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => { setName(e.target.value); clearFieldError("name"); }}
               placeholder="Ваше имя"
-              required
+              className={fieldErrors.name ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""}
             />
+            {fieldErrors.name && (
+              <p className="mt-1.5 text-xs text-red-500">{fieldErrors.name}</p>
+            )}
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-semibold">Email</label>
             <Input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => { setEmail(e.target.value); clearFieldError("email"); }}
               placeholder="your@email.com"
-              required
+              className={fieldErrors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""}
             />
+            {fieldErrors.email && (
+              <p className="mt-1.5 text-xs text-red-500">{fieldErrors.email}</p>
+            )}
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-semibold">Пароль</label>
             <Input
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => { setPassword(e.target.value); clearFieldError("password"); }}
               placeholder="Минимум 8 символов"
-              minLength={8}
-              required
+              className={fieldErrors.password ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""}
             />
+            {fieldErrors.password && (
+              <p className="mt-1.5 text-xs text-red-500">{fieldErrors.password}</p>
+            )}
           </div>
           {error && (
             <div className="rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-600 dark:text-red-400 animate-slide-down">

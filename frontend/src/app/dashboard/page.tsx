@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useToast } from "@/components/ui/toast";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
 import { CalendarDays, Gift, Plus, Share2, Trash2, Sparkles } from "lucide-react";
@@ -24,6 +25,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [wishlists, setWishlists] = useState<WishlistSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const { toast, confirm } = useToast();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -36,19 +38,20 @@ export default function DashboardPage() {
   }, [user, authLoading, router]);
 
   async function handleDelete(slug: string) {
-    if (!confirm("Удалить вишлист и все подарки?")) return;
+    const ok = await confirm("Удалить вишлист и все подарки?");
+    if (!ok) return;
     try {
       await api.deleteWishlist(slug);
       setWishlists((prev) => prev.filter((w) => w.slug !== slug));
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Error");
+      toast(e instanceof Error ? e.message : "Ошибка удаления", "error");
     }
   }
 
   function copyLink(slug: string) {
     const url = `${window.location.origin}/wishlist/${slug}`;
     navigator.clipboard.writeText(url);
-    alert("Ссылка скопирована!");
+    toast("Ссылка скопирована!");
   }
 
   if (authLoading || loading) {

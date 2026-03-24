@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, Suspense } from "react";
+import { useRef, Suspense, useEffect, useCallback } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
@@ -14,8 +14,6 @@ import {
   Sparkles,
   Shield,
   Zap,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -72,7 +70,7 @@ function AnimatedNumber({ value, suffix = "" }: { value: number; suffix?: string
   );
 }
 
-// Карусель демо
+// Карусель демо с автопрокруткой и свайпом
 const demoSlides = [
   {
     title: "Создай вишлист",
@@ -107,10 +105,48 @@ function DemoCarousel() {
   const [current, setCurrent] = useState(0);
   const slide = demoSlides[current];
 
+  // Автопрокрутка каждые 5 секунд
+  const next = useCallback(() => {
+    setCurrent((c) => (c + 1) % demoSlides.length);
+  }, []);
+
+  useEffect(() => {
+    const timer = setInterval(next, 5000);
+    return () => clearInterval(timer);
+  }, [next, current]);
+
+  // Поддержка свайпа
+  const touchStartX = useRef(0);
+
+  function handleTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX;
+  }
+
+  function handleTouchEnd(e: React.TouchEvent) {
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) {
+        setCurrent((c) => (c + 1) % demoSlides.length);
+      } else {
+        setCurrent((c) => (c - 1 + demoSlides.length) % demoSlides.length);
+      }
+    }
+  }
+
   return (
-    <div className="relative max-w-3xl mx-auto">
+    <div
+      className="relative max-w-3xl mx-auto"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       <div className="glass-card rounded-3xl p-8 sm:p-10">
-        <div className="flex flex-col sm:flex-row items-start gap-8">
+        <motion.div
+          key={current}
+          initial={{ opacity: 0, x: 30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="flex flex-col sm:flex-row items-start gap-8"
+        >
           {/* Текст */}
           <div className="flex-1 min-w-0">
             <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-purple-500">
@@ -170,34 +206,20 @@ function DemoCarousel() {
               )}
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
 
-      {/* Навигация */}
-      <div className="mt-6 flex items-center justify-center gap-4">
-        <button
-          onClick={() => setCurrent((c) => (c - 1 + demoSlides.length) % demoSlides.length)}
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 hover:border-white/20 hover:bg-white/5 transition-all"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </button>
-        <div className="flex gap-2">
-          {demoSlides.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrent(i)}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                i === current ? "w-8 bg-accent" : "w-2 bg-white/20"
-              }`}
-            />
-          ))}
-        </div>
-        <button
-          onClick={() => setCurrent((c) => (c + 1) % demoSlides.length)}
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 hover:border-white/20 hover:bg-white/5 transition-all"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </button>
+      {/* Навигация — только точки, без стрелок */}
+      <div className="mt-6 flex items-center justify-center gap-2">
+        {demoSlides.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setCurrent(i)}
+            className={`h-2 rounded-full transition-all duration-300 ${
+              i === current ? "w-8 bg-accent" : "w-2 bg-white/20 hover:bg-white/40"
+            }`}
+          />
+        ))}
       </div>
     </div>
   );
@@ -342,12 +364,11 @@ export default function Home() {
       {/* === СТАТИСТИКА === */}
       <section className="py-24 sm:py-32">
         <div className="mx-auto max-w-5xl px-6">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 sm:gap-12">
+          <div className="grid grid-cols-3 gap-8 sm:gap-12">
             {[
-              { value: 1200, suffix: "+", label: "Вишлистов создано" },
-              { value: 8500, suffix: "+", label: "Подарков добавлено" },
-              { value: 3400, suffix: "+", label: "Подарков зарезервировано" },
-              { value: 99, suffix: "%", label: "Довольных пользователей" },
+              { value: 150, suffix: "+", label: "Вишлистов создано" },
+              { value: 500, suffix: "+", label: "Подарков добавлено" },
+              { value: 200, suffix: "+", label: "Подарков зарезервировано" },
             ].map((stat, i) => (
               <RevealSection key={stat.label} delay={i * 0.1} className="text-center">
                 <AnimatedNumber value={stat.value} suffix={stat.suffix} />
@@ -499,7 +520,7 @@ export default function Home() {
             </div>
             <span className="font-semibold text-zinc-300">WishList</span>
           </div>
-          <p>© 2024 WishList. Создано с любовью к подаркам.</p>
+          <p>&copy; 2024 WishList. Создано с любовью к подаркам.</p>
         </div>
       </footer>
     </div>

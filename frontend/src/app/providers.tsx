@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { AuthProvider } from "@/lib/auth-context";
 import { Navbar } from "@/components/navbar";
+import { ToastProvider } from "@/components/ui/toast";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -11,12 +12,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthProvider>
-      <Navbar />
-      {isHome ? (
-        <main>{children}</main>
-      ) : (
-        <main className="mx-auto max-w-5xl px-4 py-8 pt-24">{children}</main>
-      )}
+      <ToastProvider>
+        <Navbar />
+        {isHome ? (
+          <main>{children}</main>
+        ) : (
+          <main className="mx-auto max-w-5xl px-4 py-8 pt-24">{children}</main>
+        )}
+      </ToastProvider>
     </AuthProvider>
   );
 }
