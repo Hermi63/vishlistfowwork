@@ -13,7 +13,9 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/wishlist"
     SECRET_KEY: str = _INSECURE_DEFAULT
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
+    # Безопасность: время жизни токена — 2 часа (вместо 24)
+    # Короткое время жизни снижает риск при компрометации токена
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 120
     CORS_ORIGINS: str = "http://localhost:3000"
     GOOGLE_CLIENT_ID: str = ""
 

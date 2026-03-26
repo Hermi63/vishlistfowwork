@@ -22,7 +22,10 @@ async def websocket_endpoint(websocket: WebSocket, slug: str):
         await websocket.close(code=4004)
         return
 
-    await manager.connect(slug, websocket)
+    # Безопасность: проверяем лимит подключений
+    connected = await manager.connect(slug, websocket)
+    if not connected:
+        return
     try:
         while True:
             # Read and silently discard client messages (clients are receive-only)

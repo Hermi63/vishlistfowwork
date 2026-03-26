@@ -18,6 +18,26 @@ const nextConfig = {
             key: "Cross-Origin-Opener-Policy",
             value: "same-origin-allow-popups",
           },
+          // Безопасность: запрещаем встраивание сайта в iframe (защита от clickjacking)
+          {
+            key: "X-Frame-Options",
+            value: "DENY",
+          },
+          // Безопасность: запрещаем MIME-type sniffing
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+          // Безопасность: не передавать referrer на внешние сайты
+          {
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
+          },
+          // Безопасность: запрещаем небезопасные функции браузера
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=()",
+          },
         ],
       },
     ];

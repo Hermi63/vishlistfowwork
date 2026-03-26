@@ -3,14 +3,22 @@ from collections import defaultdict
 
 from fastapi import WebSocket
 
+# Максимум подключений на один вишлист — защита от исчерпания ресурсов
+_MAX_CONNECTIONS_PER_SLUG = 100
+
 
 class ConnectionManager:
     def __init__(self):
         self._connections: dict[str, list[WebSocket]] = defaultdict(list)
 
-    async def connect(self, wishlist_slug: str, websocket: WebSocket):
+    async def connect(self, wishlist_slug: str, websocket: WebSocket) -> bool:
+        """Подключить клиента. Возвращает False при превышении лимита."""
+        if len(self._connections[wishlist_slug]) >= _MAX_CONNECTIONS_PER_SLUG:
+            await websocket.close(code=4029, reason="Слишком много подключений")
+            return False
         await websocket.accept()
         self._connections[wishlist_slug].append(websocket)
+        return True
 
     def disconnect(self, wishlist_slug: str, websocket: WebSocket):
         self._connections[wishlist_slug].remove(websocket)

@@ -151,6 +151,9 @@ class ContributionOut(BaseModel):
 class LinkPreviewRequest(BaseModel):
     url: str = Field(min_length=1, max_length=2048)
 
+    # Безопасность: валидация протокола URL для предотвращения SSRF через javascript:/data: схемы
+    _validate_url = field_validator("url", mode="before")(_validate_safe_url)
+
 
 class LinkPreviewResponse(BaseModel):
     title: str | None = None

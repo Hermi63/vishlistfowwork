@@ -191,6 +191,21 @@ async def _try_microlink(url: str, result: dict, client: httpx.AsyncClient) -> b
 # Основная функция парсинга
 # ---------------------------------------------------------------------------
 
+def _validate_redirect(response: httpx.Response) -> None:
+    """Проверка каждого редиректа на SSRF — предотвращает DNS rebinding атаки.
+
+    При follow_redirects httpx может перейти на внутренний IP после первичной
+    проверки публичного хоста. Эта функция вызывается как event_hook на каждый ответ.
+    """
+    if response.is_redirect:
+        location = response.headers.get("location", "")
+        if location and not _is_safe_url(location):
+            raise httpx.RequestError(
+                f"Редирект на небезопасный URL заблокирован: {location}",
+                request=response.request,
+            )
+
+
 async def fetch_link_preview(url: str) -> dict:
     result = {"title": None, "image": None, "price": None, "description": None}
 
@@ -206,6 +221,8 @@ async def fetch_link_preview(url: str) -> dict:
             follow_redirects=True,
             timeout=10,
             max_redirects=3,
+            # Безопасность: проверяем каждый редирект на SSRF
+            event_hooks={"response": [_validate_redirect]},
         ) as client:
             async with client.stream(
                 "GET",

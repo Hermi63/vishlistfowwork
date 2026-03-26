@@ -26,8 +26,18 @@ def create_access_token(user_id: int) -> str:
 
 
 def decode_token(token: str) -> int | None:
+    """Декодирует JWT токен и возвращает user_id.
+
+    Безопасность: явно указываем список допустимых алгоритмов,
+    чтобы предотвратить атаку с подменой алгоритма на 'none'.
+    """
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM],
+            options={"require": ["exp", "sub"]},
+        )
         user_id = payload.get("sub")
         return int(user_id) if user_id else None
     except (jwt.InvalidTokenError, ValueError):

@@ -9,6 +9,14 @@ const API_URL = /localhost|127\.0\.0\.1/.test(_rawApiUrl)
   ? _rawApiUrl
   : _rawApiUrl.replace(/^http:\/\//, "https://");
 
+/**
+ * Безопасность: санитизация параметров для URL — предотвращает path traversal
+ * Удаляет спецсимволы, которые могут изменить путь запроса
+ */
+function sanitizePathParam(param: string | number): string {
+  return String(param).replace(/[^a-zA-Z0-9_\-]/g, "");
+}
+
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem("token");
@@ -64,43 +72,44 @@ export const api = {
   createWishlist: (data: { title: string; description?: string; event_date?: string }) =>
     request("/api/wishlists/", { method: "POST", body: JSON.stringify(data) }),
 
-  getWishlist: (slug: string) => request(`/api/wishlists/${slug}`),
+  // Безопасность: все параметры пути санитизируются для предотвращения path traversal
+  getWishlist: (slug: string) => request(`/api/wishlists/${sanitizePathParam(slug)}`),
 
   updateWishlist: (slug: string, data: Record<string, unknown>) =>
-    request(`/api/wishlists/${slug}`, { method: "PUT", body: JSON.stringify(data) }),
+    request(`/api/wishlists/${sanitizePathParam(slug)}`, { method: "PUT", body: JSON.stringify(data) }),
 
   deleteWishlist: (slug: string) =>
-    request(`/api/wishlists/${slug}`, { method: "DELETE" }),
+    request(`/api/wishlists/${sanitizePathParam(slug)}`, { method: "DELETE" }),
 
   // Items
   addItem: (slug: string, data: Record<string, unknown>) =>
-    request(`/api/wishlists/${slug}/items/`, { method: "POST", body: JSON.stringify(data) }),
+    request(`/api/wishlists/${sanitizePathParam(slug)}/items/`, { method: "POST", body: JSON.stringify(data) }),
 
   updateItem: (slug: string, itemId: number, data: Record<string, unknown>) =>
-    request(`/api/wishlists/${slug}/items/${itemId}`, { method: "PUT", body: JSON.stringify(data) }),
+    request(`/api/wishlists/${sanitizePathParam(slug)}/items/${sanitizePathParam(itemId)}`, { method: "PUT", body: JSON.stringify(data) }),
 
   deleteItem: (slug: string, itemId: number) =>
-    request(`/api/wishlists/${slug}/items/${itemId}`, { method: "DELETE" }),
+    request(`/api/wishlists/${sanitizePathParam(slug)}/items/${sanitizePathParam(itemId)}`, { method: "DELETE" }),
 
   // Reserve
   reserveItem: (slug: string, itemId: number, name: string) =>
-    request(`/api/wishlists/${slug}/items/${itemId}/reserve`, {
+    request(`/api/wishlists/${sanitizePathParam(slug)}/items/${sanitizePathParam(itemId)}/reserve`, {
       method: "POST",
       body: JSON.stringify({ name }),
     }),
 
   unreserveItem: (slug: string, itemId: number) =>
-    request(`/api/wishlists/${slug}/items/${itemId}/reserve`, { method: "DELETE" }),
+    request(`/api/wishlists/${sanitizePathParam(slug)}/items/${sanitizePathParam(itemId)}/reserve`, { method: "DELETE" }),
 
   // Contribute
   contribute: (slug: string, itemId: number, name: string, amount: number) =>
-    request(`/api/wishlists/${slug}/items/${itemId}/contribute`, {
+    request(`/api/wishlists/${sanitizePathParam(slug)}/items/${sanitizePathParam(itemId)}/contribute`, {
       method: "POST",
       body: JSON.stringify({ name, amount }),
     }),
 
   removeContribution: (slug: string, itemId: number, contributionId: number) =>
-    request(`/api/wishlists/${slug}/items/${itemId}/contribute/${contributionId}`, {
+    request(`/api/wishlists/${sanitizePathParam(slug)}/items/${sanitizePathParam(itemId)}/contribute/${sanitizePathParam(contributionId)}`, {
       method: "DELETE",
     }),
 
@@ -110,10 +119,12 @@ export const api = {
 };
 
 export function getWsUrl(slug: string): string {
+  // Безопасность: санитизация slug перед использованием в WebSocket URL
+  const safeSlug = sanitizePathParam(slug);
   // WebSocket напрямую к бэкенду, принудительно WSS для не-localhost
   const safeUrl = /localhost|127\.0\.0\.1/.test(_rawApiUrl)
     ? _rawApiUrl
     : _rawApiUrl.replace(/^http:\/\//, "https://");
   const wsBase = safeUrl.replace(/^https/, "wss").replace(/^http(?!s)/, "ws");
-  return `${wsBase}/ws/${slug}`;
+  return `${wsBase}/ws/${safeSlug}`;
 }

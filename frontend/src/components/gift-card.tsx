@@ -7,8 +7,8 @@ import { Input } from "./ui/input";
 import { Progress } from "./ui/progress";
 import { useToast } from "./ui/toast";
 import { api } from "@/lib/api";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  ExternalLink,
   Gift,
   Lock,
   Unlock,
@@ -16,6 +16,8 @@ import {
   Trash2,
   Users,
   CheckCircle2,
+  Sparkles,
+  ArrowUpRight,
 } from "lucide-react";
 
 interface GiftItem {
@@ -38,6 +40,39 @@ interface GiftCardProps {
   onUpdate: () => void;
 }
 
+/* Утилита: генерируем цвет аватарки по имени */
+function getAvatarColor(name: string): string {
+  const colors = [
+    "from-indigo-500 to-purple-500",
+    "from-purple-500 to-pink-500",
+    "from-pink-500 to-rose-500",
+    "from-emerald-500 to-teal-500",
+    "from-amber-500 to-orange-500",
+    "from-cyan-500 to-blue-500",
+  ];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+}
+
+/* Мини-аватарка с инициалом */
+function MiniAvatar({ name, size = "sm" }: { name: string; size?: "sm" | "md" }) {
+  const initial = name.charAt(0).toUpperCase();
+  const colorClass = getAvatarColor(name);
+  const sizeClass = size === "sm" ? "h-6 w-6 text-[10px]" : "h-7 w-7 text-xs";
+
+  return (
+    <div
+      className={`${sizeClass} rounded-full bg-gradient-to-br ${colorClass} flex items-center justify-center font-bold text-white ring-2 ring-[#050510] shrink-0`}
+      title={name}
+    >
+      {initial}
+    </div>
+  );
+}
+
 export function GiftCard({ item, slug, isOwner, onUpdate }: GiftCardProps) {
   const [showReserve, setShowReserve] = useState(false);
   const [showContribute, setShowContribute] = useState(false);
@@ -46,25 +81,34 @@ export function GiftCard({ item, slug, isOwner, onUpdate }: GiftCardProps) {
   const [loading, setLoading] = useState(false);
   const { toast, confirm } = useToast();
 
-  const statusLabel: Record<string, { text: string; color: string; icon: React.ReactNode }> = {
+  const statusLabel: Record<
+    string,
+    { text: string; color: string; icon: React.ReactNode; glow?: string }
+  > = {
     available: {
       text: "Доступен",
-      color: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800",
+      color:
+        "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
       icon: <Gift className="h-3.5 w-3.5" />,
+      glow: "shadow-[0_0_12px_-3px_rgba(52,211,153,0.3)]",
     },
     reserved: {
       text: "Зарезервирован",
-      color: "bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 border border-amber-200 dark:border-amber-800",
+      color:
+        "bg-amber-500/10 text-amber-400 border border-amber-500/20",
       icon: <Lock className="h-3.5 w-3.5" />,
     },
     crowdfunding: {
       text: "Сбор средств",
-      color: "bg-accent/5 text-accent border border-accent/20",
+      color:
+        "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20",
       icon: <Users className="h-3.5 w-3.5" />,
+      glow: "shadow-[0_0_12px_-3px_rgba(99,102,241,0.3)]",
     },
     funded: {
       text: "Собрано!",
-      color: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800",
+      color:
+        "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
       icon: <CheckCircle2 className="h-3.5 w-3.5" />,
     },
   };
@@ -125,102 +169,185 @@ export function GiftCard({ item, slug, isOwner, onUpdate }: GiftCardProps) {
     }
   }
 
+  /* Процент для прогресса */
+  const progressPct =
+    item.price && item.price > 0
+      ? Math.round((item.total_contributed / item.price) * 100)
+      : 0;
+
   return (
-    <Card className="overflow-hidden flex flex-col">
+    <Card className="overflow-hidden flex flex-col group/card">
       {/* Изображение */}
       {item.image_url ? (
-        <div className="relative h-52 bg-surface-hover overflow-hidden group">
+        <div className="relative h-52 bg-white/[0.02] overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={item.image_url}
             alt={item.title}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover/card:scale-110"
             onError={(e) => {
               (e.target as HTMLImageElement).style.display = "none";
             }}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          {/* Градиент на фото снизу для читаемости */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#050510] via-transparent to-transparent opacity-60" />
+          {/* Бейдж статуса на изображении */}
+          <div className="absolute top-3 right-3">
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold backdrop-blur-md ${st.color} ${st.glow || ""}`}
+            >
+              {st.icon} {st.text}
+            </span>
+          </div>
+          {/* Цена поверх изображения */}
+          {item.price !== null && (
+            <div className="absolute bottom-3 left-4">
+              <span className="text-2xl font-extrabold tracking-tight text-white drop-shadow-lg">
+                {item.price.toLocaleString("ru-RU")}{" "}
+                <span className="text-base font-medium text-white/60">&#8381;</span>
+              </span>
+            </div>
+          )}
         </div>
       ) : (
-        <div className="flex h-36 items-center justify-center bg-gradient-to-br from-accent/5 to-purple-500/5">
-          <Gift className="h-14 w-14 text-accent/20" />
+        <div className="relative flex h-40 items-center justify-center bg-gradient-to-br from-indigo-500/[0.06] via-purple-500/[0.04] to-pink-500/[0.06] overflow-hidden">
+          {/* Декоративные элементы */}
+          <div className="absolute inset-0 opacity-30">
+            <div className="absolute top-4 left-4 h-16 w-16 rounded-full bg-indigo-500/10 blur-2xl" />
+            <div className="absolute bottom-4 right-4 h-12 w-12 rounded-full bg-purple-500/10 blur-2xl" />
+          </div>
+          <Gift className="h-12 w-12 text-accent/20 transition-transform duration-500 group-hover/card:scale-110 group-hover/card:text-accent/30" />
+          {/* Бейдж статуса */}
+          <div className="absolute top-3 right-3">
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold ${st.color} ${st.glow || ""}`}
+            >
+              {st.icon} {st.text}
+            </span>
+          </div>
         </div>
       )}
 
       <div className="flex flex-1 flex-col p-5">
-        {/* Заголовок и статус */}
-        <div className="mb-3 flex items-start justify-between gap-2">
-          <h3 className="font-bold text-lg leading-tight">{item.title}</h3>
-          <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap ${st.color}`}>
-            {st.icon} {st.text}
-          </span>
+        {/* Заголовок */}
+        <div className="mb-2">
+          <h3 className="font-bold text-[1.1rem] leading-tight text-zinc-100 group-hover/card:text-white transition-colors duration-300">
+            {item.title}
+          </h3>
         </div>
 
+        {/* Описание */}
         {item.description && (
-          <p className="mb-3 text-sm text-muted line-clamp-2 leading-relaxed">{item.description}</p>
-        )}
-
-        {/* Цена */}
-        {item.price !== null && (
-          <p className="mb-3 text-2xl font-extrabold tracking-tight">
-            {item.price.toLocaleString("ru-RU")} <span className="text-lg text-muted">₽</span>
+          <p className="mb-3 text-sm text-zinc-500 line-clamp-2 leading-relaxed">
+            {item.description}
           </p>
         )}
 
-        {/* Прогресс сбора */}
-        {(item.status === "crowdfunding" || item.status === "funded") && item.price && (
-          <div className="mb-4">
-            <div className="mb-2 flex justify-between text-xs font-medium text-muted">
-              <span>Собрано: {item.total_contributed.toLocaleString("ru-RU")} ₽</span>
-              <span className="text-accent font-bold">{Math.round((item.total_contributed / item.price) * 100)}%</span>
-            </div>
-            <Progress value={item.total_contributed} max={item.price} />
+        {/* Цена — показываем только если нет изображения (иначе на фото) */}
+        {item.price !== null && !item.image_url && (
+          <div className="mb-3">
+            <span className="price-tag inline-flex items-center gap-1 text-lg font-extrabold tracking-tight text-zinc-100">
+              {item.price.toLocaleString("ru-RU")}
+              <span className="text-sm font-medium text-zinc-500">&#8381;</span>
+            </span>
           </div>
         )}
 
-        {/* Список вкладов */}
-        {!isOwner && item.contributions.length > 0 && (
-          <div className="mb-4 rounded-xl bg-surface-hover p-3">
-            <p className="mb-2 text-xs font-semibold text-muted uppercase tracking-wide">Вклады</p>
-            {item.contributions.map((c) => (
-              <div key={c.id} className="flex justify-between text-sm py-1">
-                <span className="font-medium">{c.contributor_name}</span>
-                <span className="font-bold text-accent">{c.amount.toLocaleString("ru-RU")} ₽</span>
+        {/* Прогресс сбора средств */}
+        {(item.status === "crowdfunding" || item.status === "funded") &&
+          item.price && (
+            <div className="mb-4">
+              <div className="mb-2 flex justify-between items-center text-xs">
+                <span className="text-zinc-500 font-medium">
+                  Собрано{" "}
+                  <span className="text-zinc-300 font-bold">
+                    {item.total_contributed.toLocaleString("ru-RU")} &#8381;
+                  </span>
+                </span>
+                <span
+                  className={`font-bold ${
+                    progressPct >= 100 ? "text-emerald-400" : "text-accent"
+                  }`}
+                >
+                  {progressPct}%
+                </span>
               </div>
-            ))}
+              <Progress value={item.total_contributed} max={item.price} />
+            </div>
+          )}
+
+        {/* Список вкладов с аватарками */}
+        {!isOwner && item.contributions.length > 0 && (
+          <div className="mb-4 rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
+            <p className="mb-2.5 text-[11px] font-semibold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
+              <Sparkles className="h-3 w-3 text-accent/50" />
+              Участники сбора
+            </p>
+            <div className="space-y-2">
+              {item.contributions.map((c) => (
+                <div
+                  key={c.id}
+                  className="flex items-center justify-between gap-2"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <MiniAvatar name={c.contributor_name} />
+                    <span className="text-sm font-medium text-zinc-300 truncate">
+                      {c.contributor_name}
+                    </span>
+                  </div>
+                  <span className="text-sm font-bold text-accent shrink-0">
+                    {c.amount.toLocaleString("ru-RU")} &#8381;
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
-        <div className="mt-auto flex flex-col gap-2 pt-3">
+        {/* Кнопки действий — прижаты к низу */}
+        <div className="mt-auto flex flex-col gap-2.5 pt-3">
           {/* Ссылка на товар */}
           {item.url && (
             <a
               href={item.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:text-accent-dark transition-colors"
+              className="group/link inline-flex items-center gap-1.5 text-sm font-medium text-zinc-400 hover:text-accent transition-colors duration-200"
             >
-              <ExternalLink className="h-3.5 w-3.5" /> Перейти к товару
+              <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5" />
+              Перейти к товару
             </a>
           )}
 
-          {/* Действия гостя */}
+          {/* Действия гостя — доступен */}
           {!isOwner && item.status === "available" && (
             <div className="flex gap-2 mt-1">
-              <Button size="sm" variant="gradient" className="flex-1" onClick={() => setShowReserve(!showReserve)}>
+              <Button
+                size="sm"
+                variant="gradient"
+                className="flex-1"
+                onClick={() => {
+                  setShowReserve(!showReserve);
+                  setShowContribute(false);
+                }}
+              >
                 <Lock className="h-3.5 w-3.5" /> Зарезервировать
               </Button>
               <Button
                 size="sm"
                 variant="outline"
                 className="flex-1"
-                onClick={() => setShowContribute(!showContribute)}
+                onClick={() => {
+                  setShowContribute(!showContribute);
+                  setShowReserve(false);
+                }}
               >
                 <DollarSign className="h-3.5 w-3.5" /> Скинуться
               </Button>
             </div>
           )}
 
+          {/* Действия гостя — краудфандинг */}
           {!isOwner && item.status === "crowdfunding" && (
             <Button
               size="sm"
@@ -232,56 +359,102 @@ export function GiftCard({ item, slug, isOwner, onUpdate }: GiftCardProps) {
             </Button>
           )}
 
+          {/* Информация о резервировании */}
           {!isOwner && item.status === "reserved" && item.reservation && (
-            <div className="flex items-center justify-between mt-1 rounded-xl bg-amber-50 dark:bg-amber-900/10 px-3 py-2">
-              <span className="text-sm text-muted">
-                Зарезервировал: <strong>{item.reservation.reserved_by_name}</strong>
-              </span>
-              <Button size="sm" variant="ghost" onClick={handleUnreserve} disabled={loading} className="text-muted hover:text-foreground">
+            <div className="flex items-center justify-between mt-1 rounded-xl bg-amber-500/[0.06] border border-amber-500/10 px-3 py-2.5">
+              <div className="flex items-center gap-2">
+                <MiniAvatar name={item.reservation.reserved_by_name} size="md" />
+                <div className="flex flex-col">
+                  <span className="text-[11px] text-zinc-500">Зарезервировал</span>
+                  <span className="text-sm font-semibold text-zinc-300">
+                    {item.reservation.reserved_by_name}
+                  </span>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleUnreserve}
+                disabled={loading}
+                className="text-zinc-500 hover:text-zinc-100"
+              >
                 <Unlock className="h-3.5 w-3.5" />
               </Button>
             </div>
           )}
 
-          {/* Форма резервирования */}
-          {showReserve && (
-            <div className="flex gap-2 animate-slide-down">
-              <Input
-                placeholder="Ваше имя"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-              <Button size="sm" variant="gradient" onClick={handleReserve} disabled={loading}>
-                OK
-              </Button>
-            </div>
-          )}
-
-          {/* Форма вклада */}
-          {showContribute && (
-            <div className="space-y-2 animate-slide-down">
-              <Input
-                placeholder="Ваше имя"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-              <div className="flex gap-2">
+          {/* Форма резервирования с анимацией */}
+          <AnimatePresence>
+            {showReserve && (
+              <motion.div
+                className="flex gap-2"
+                initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                animate={{ opacity: 1, height: "auto", marginTop: 4 }}
+                exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              >
                 <Input
-                  type="number"
-                  placeholder="Сумма, ₽"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="Ваше имя"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleReserve()}
                 />
-                <Button size="sm" variant="gradient" onClick={handleContribute} disabled={loading}>
-                  Внести
+                <Button
+                  size="sm"
+                  variant="gradient"
+                  onClick={handleReserve}
+                  disabled={loading || !name.trim()}
+                >
+                  OK
                 </Button>
-              </div>
-            </div>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Форма вклада с анимацией */}
+          <AnimatePresence>
+            {showContribute && (
+              <motion.div
+                className="space-y-2"
+                initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                animate={{ opacity: 1, height: "auto", marginTop: 4 }}
+                exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <Input
+                  placeholder="Ваше имя"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Сумма, &#8381;"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleContribute()}
+                  />
+                  <Button
+                    size="sm"
+                    variant="gradient"
+                    onClick={handleContribute}
+                    disabled={loading || !name.trim() || !amount}
+                  >
+                    Внести
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Удаление (для владельца) */}
           {isOwner && (
-            <Button size="sm" variant="destructive" onClick={handleDeleteItem} className="mt-1">
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={handleDeleteItem}
+              className="mt-1"
+            >
               <Trash2 className="h-3.5 w-3.5" /> Удалить
             </Button>
           )}

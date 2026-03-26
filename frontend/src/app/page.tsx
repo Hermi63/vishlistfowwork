@@ -1,10 +1,9 @@
 "use client";
 
-import { useRef, Suspense, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
-import { motion, useScroll, useTransform, useInView } from "framer-motion";
+import { motion, useScroll, useInView } from "framer-motion";
 import {
   ArrowRight,
   Gift,
@@ -16,12 +15,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useState } from "react";
-
-// Ленивая загрузка 3D-сцены
-const HeroScene = dynamic(
-  () => import("@/components/scene-3d").then((m) => ({ default: m.HeroScene })),
-  { ssr: false }
-);
+import { HeroScene } from "@/components/scene-3d";
 
 // Анимированная секция с reveal при скролле
 function RevealSection({ children, className = "", delay = 0 }: {
@@ -272,10 +266,6 @@ export default function Home() {
     offset: ["start start", "end start"],
   });
 
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
-  const heroScale = useTransform(scrollYProgress, [0, 0.5], [1, 0.95]);
-  const heroY = useTransform(scrollYProgress, [0, 0.5], [0, -50]);
-
   return (
     <div className="noise-overlay">
       {/* Scroll progress */}
@@ -286,19 +276,14 @@ export default function Home() {
 
       {/* === HERO === */}
       <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* 3D-фон */}
-        <Suspense fallback={null}>
-          <HeroScene />
-        </Suspense>
+        {/* Лёгкий CSS-фон вместо Three.js */}
+        <HeroScene />
 
         {/* Градиентный overlay */}
         <div className="absolute inset-0 hero-dark-gradient z-[1]" />
 
         {/* Контент */}
-        <motion.div
-          style={{ opacity: heroOpacity, scale: heroScale, y: heroY }}
-          className="relative z-10 mx-auto max-w-5xl px-6 text-center"
-        >
+        <div className="relative z-10 mx-auto max-w-5xl px-6 text-center">
           {/* Бейдж */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -352,7 +337,7 @@ export default function Home() {
               </Button>
             </Link>
           </motion.div>
-        </motion.div>
+        </div>
 
         {/* Градиент снизу */}
         <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#050510] to-transparent z-[2]" />
